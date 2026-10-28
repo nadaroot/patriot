@@ -33,32 +33,32 @@ export const LocationDetail = ({
       <div className={`relative w-full max-w-4xl backdrop-blur-2xl border rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] transition-colors ${
         isDark 
           ? 'bg-neutral-950/85 border-neutral-800/80 text-neutral-100' 
-          : 'bg-white/95 border-neutral-200 text-neutral-900'
+          : 'bg-[#fcfbf7]/98 border-[#e5dcce] text-[#2c261e]'
       }`}>
         
         {/* Header */}
         <div className={`p-5 sm:p-7 border-b relative transition-colors ${
           isDark 
             ? 'border-neutral-800/60 bg-neutral-900/40' 
-            : 'border-neutral-200 bg-neutral-50/80'
+            : 'border-[#e5dcce] bg-[#f7f3eb]/90'
         }`}>
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className={`flex items-center gap-2 text-xs font-mono uppercase tracking-wider font-semibold ${
-                isDark ? 'text-neutral-400' : 'text-neutral-500'
+                isDark ? 'text-neutral-400' : 'text-[#8a7a66]'
               }`}>
-                <MapPin className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-300' : 'text-neutral-700'}`} />
-                <span className={isDark ? 'text-white' : 'text-neutral-800 font-bold'}>{location.district}</span>
+                <MapPin className={`w-3.5 h-3.5 ${isDark ? 'text-neutral-300' : 'text-[#7e715f]'}`} />
+                <span className={isDark ? 'text-white' : 'text-[#2c261e] font-bold'}>{location.district}</span>
                 <span>•</span>
                 <span>Архивные кадры: {location.archiveYear}</span>
               </div>
               <h2 className={`font-bold text-xl sm:text-2xl tracking-tight ${
-                isDark ? 'text-white' : 'text-neutral-900'
+                isDark ? 'text-white' : 'text-[#2c261e]'
               }`}>
                 {location.title}
               </h2>
               <p className={`text-xs sm:text-sm leading-relaxed font-sans max-w-2xl ${
-                isDark ? 'text-neutral-400' : 'text-neutral-600'
+                isDark ? 'text-neutral-400' : 'text-[#635747]'
               }`}>
                 {location.subtitle}
               </p>
@@ -72,7 +72,7 @@ export const LocationDetail = ({
                 className={`p-2 sm:px-3 sm:py-2 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors ${
                   isDark 
                     ? 'bg-neutral-900/60 border-neutral-800/70 text-neutral-300 hover:text-white hover:bg-neutral-850' 
-                    : 'bg-neutral-100 border-neutral-200 text-neutral-700 hover:text-black hover:bg-neutral-200'
+                    : 'bg-[#efe8dc] border-[#e0d6c5] text-[#5e5344] hover:text-[#1a1612] hover:bg-[#e4dcce]'
                 }`}
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
@@ -83,7 +83,7 @@ export const LocationDetail = ({
                 className={`p-2 rounded-xl border transition-colors ${
                   isDark 
                     ? 'bg-neutral-900/60 border-neutral-800/70 text-neutral-400 hover:text-white hover:bg-neutral-850' 
-                    : 'bg-neutral-100 border-neutral-200 text-neutral-600 hover:text-black hover:bg-neutral-200'
+                    : 'bg-[#efe8dc] border-[#e0d6c5] text-[#5e5344] hover:text-[#1a1612] hover:bg-[#e4dcce]'
                 }`}
                 aria-label="Закрыть"
               >
@@ -94,7 +94,7 @@ export const LocationDetail = ({
 
           {/* Navigation Tabs */}
           <div className={`flex items-center gap-1.5 sm:gap-2 mt-5 pt-3 border-t overflow-x-auto scrollbar-none text-xs sm:text-sm ${
-            isDark ? 'border-neutral-800/60' : 'border-neutral-200'
+            isDark ? 'border-neutral-800/60' : 'border-[#e5dcce]'
           }`}>
             <button
               onClick={() => setActiveTab('slider')}
@@ -102,10 +102,10 @@ export const LocationDetail = ({
                 activeTab === 'slider'
                   ? isDark 
                     ? 'bg-white text-black font-semibold shadow-xs' 
-                    : 'bg-neutral-900 text-white font-semibold shadow-xs'
+                    : 'bg-[#2c261e] text-[#fbf9f4] font-semibold shadow-xs'
                   : isDark 
                     ? 'bg-neutral-900/50 border border-neutral-800/60 text-neutral-400 hover:text-white' 
-                    : 'bg-white border border-neutral-200 text-neutral-600 hover:text-black'
+                    : 'bg-[#efe8dc] border border-[#e0d6c5] text-[#5e5344] hover:text-[#1a1612]'
               }`}
             >
               <Split className="w-4 h-4" />
@@ -118,10 +118,10 @@ export const LocationDetail = ({
                 activeTab === 'history'
                   ? isDark 
                     ? 'bg-white text-black font-semibold shadow-xs' 
-                    : 'bg-neutral-900 text-white font-semibold shadow-xs'
+                    : 'bg-[#2c261e] text-[#fbf9f4] font-semibold shadow-xs'
                   : isDark 
                     ? 'bg-neutral-900/50 border border-neutral-800/60 text-neutral-400 hover:text-white' 
-                    : 'bg-white border border-neutral-200 text-neutral-600 hover:text-black'
+                    : 'bg-[#efe8dc] border border-[#e0d6c5] text-[#5e5344] hover:text-[#1a1612]'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -154,16 +154,16 @@ export const LocationDetail = ({
               <div className={`p-5 rounded-2xl border space-y-3 backdrop-blur-md transition-colors ${
                 isDark 
                   ? 'bg-neutral-900/60 border-neutral-800/60' 
-                  : 'bg-neutral-50 border-neutral-200'
+                  : 'bg-[#f7f3eb] border-[#e5dcce]'
               }`}>
                 <div className={`flex items-center gap-2 text-xs font-mono uppercase tracking-wider font-semibold ${
-                  isDark ? 'text-neutral-300' : 'text-neutral-700'
+                  isDark ? 'text-neutral-300' : 'text-[#2c261e]'
                 }`}>
-                  <BookOpen className={`w-4 h-4 ${isDark ? 'text-white' : 'text-neutral-900'}`} />
+                  <BookOpen className={`w-4 h-4 ${isDark ? 'text-white' : 'text-[#2c261e]'}`} />
                   <span>Официальная градостроительная хроника</span>
                 </div>
                 <p className={`text-xs sm:text-sm leading-relaxed font-sans ${
-                  isDark ? 'text-neutral-300' : 'text-neutral-700'
+                  isDark ? 'text-neutral-300' : 'text-[#5e5344]'
                 }`}>
                   {location.historicalFact}
                 </p>
@@ -172,9 +172,9 @@ export const LocationDetail = ({
               <div className={`p-4 rounded-xl border text-xs space-y-1 transition-colors ${
                 isDark 
                   ? 'bg-neutral-900/40 border-neutral-850/60 text-neutral-400' 
-                  : 'bg-neutral-50/60 border-neutral-200 text-neutral-500'
+                  : 'bg-[#f4efe4]/80 border-[#e5dcce] text-[#736859]'
               }`}>
-                <div className={`font-semibold ${isDark ? 'text-neutral-200' : 'text-neutral-800'}`}>
+                <div className={`font-semibold ${isDark ? 'text-neutral-200' : 'text-[#2c261e]'}`}>
                   Источниковая база:
                 </div>
                 <p className="leading-relaxed">

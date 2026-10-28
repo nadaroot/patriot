@@ -84,7 +84,7 @@ export function App() {
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 pb-16 md:pb-0 ${
       isDark 
         ? 'bg-black text-neutral-100 selection:bg-neutral-800 selection:text-white' 
-        : 'bg-neutral-50 text-neutral-900 selection:bg-neutral-200 selection:text-black'
+        : 'bg-[#f8f5ee] text-[#2c261e] selection:bg-[#e8decd] selection:text-[#1a1612]'
     }`}>
       
       {/* Translucent Header with Theme Switcher & Navigator */}
@@ -150,17 +150,17 @@ export function App() {
       <footer className={`border-t py-6 sm:py-8 px-4 text-center text-xs backdrop-blur-xl mb-16 md:mb-0 transition-colors ${
         isDark 
           ? 'border-neutral-800/60 bg-black/60 text-neutral-400' 
-          : 'border-neutral-200 bg-white/70 text-neutral-500'
+          : 'border-[#e5dcce] bg-[#fbf9f4]/85 text-[#736859]'
       }`}>
         <div className="max-w-4xl mx-auto space-y-2">
-          <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-neutral-900'}`}>
+          <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-[#2c261e]'}`}>
             «Место помнит: Интерактивный архив исторической памяти Минска»
           </div>
           <p className="max-w-xl mx-auto text-[11px] leading-relaxed">
             Проект фотофиксации и архитектурного сопоставления утраченного и сохранённого наследия. Подлинные архивные кадры и 3D-картография.
           </p>
           <div className="text-[10px] font-mono pt-2 flex items-center justify-center gap-3">
-            <a href="https://pomnit.vercel.app" className={`hover:underline ${isDark ? 'text-white' : 'text-neutral-900 font-semibold'}`}>
+            <a href="https://pomnit.vercel.app" className={`hover:underline ${isDark ? 'text-white' : 'text-[#2c261e] font-semibold'}`}>
               pomnit.vercel.app
             </a>
           </div>

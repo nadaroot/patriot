@@ -10,11 +10,11 @@ export const CompareView = ({ locations, onOpenMapLocation, theme = 'dark' }) =>
 
   return (
     <div className={`space-y-6 max-w-6xl mx-auto transition-colors ${
-      isDark ? 'text-neutral-100' : 'text-slate-900'
+      isDark ? 'text-neutral-100' : 'text-[#2c261e]'
     }`}>
       {/* Intro Header */}
       <div className={`p-6 rounded-3xl border shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4 backdrop-blur-xl ${
-        isDark ? 'bg-black/60 border-neutral-800/60' : 'bg-white/80 border-slate-200 shadow-sm'
+        isDark ? 'bg-black/60 border-neutral-800/60' : 'bg-[#fbf9f4]/90 border-[#e5dcce] shadow-sm'
       }`}>
         <div>
           <div className="flex items-center gap-2 text-xs font-mono opacity-70 mb-1">
@@ -24,7 +24,7 @@ export const CompareView = ({ locations, onOpenMapLocation, theme = 'dark' }) =>
           <h2 className="font-bold text-2xl tracking-tight">
             Сравнение эпох: Минск в деталях
           </h2>
-          <p className={`text-xs mt-1 max-w-2xl leading-relaxed ${isDark ? 'text-neutral-400' : 'text-slate-600'}`}>
+          <p className={`text-xs mt-1 max-w-2xl leading-relaxed ${isDark ? 'text-neutral-400' : 'text-[#635747]'}`}>
             Подлинные архивные кадры из фондов БГАКФФД, сопоставленные с современными снимками с идентичного ракурса.
           </p>
         </div>
@@ -32,7 +32,7 @@ export const CompareView = ({ locations, onOpenMapLocation, theme = 'dark' }) =>
         <button
           onClick={() => onOpenMapLocation && onOpenMapLocation(selectedLoc)}
           className={`px-4 py-2.5 rounded-2xl text-xs font-bold shadow-md shrink-0 flex items-center justify-center gap-2 transition-all active:scale-95 ${
-            isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-slate-900 hover:bg-black text-white'
+            isDark ? 'bg-white hover:bg-neutral-200 text-black' : 'bg-[#2c261e] hover:bg-[#1a1612] text-[#fbf9f4]'
           }`}
         >
           <MapPin className="w-4 h-4" />
@@ -52,10 +52,10 @@ export const CompareView = ({ locations, onOpenMapLocation, theme = 'dark' }) =>
                 isSelected
                   ? isDark 
                     ? 'bg-neutral-850/80 border-neutral-700 text-white font-semibold shadow-md'
-                    : 'bg-slate-900 border-slate-900 text-white font-semibold shadow-md'
+                    : 'bg-[#2c261e] border-[#2c261e] text-[#fbf9f4] font-semibold shadow-md'
                   : isDark
                     ? 'bg-black/50 border-neutral-800/60 text-neutral-400 hover:text-white hover:border-neutral-700'
-                    : 'bg-white/80 border-slate-200 text-slate-700 hover:text-black hover:bg-slate-100'
+                    : 'bg-[#efe8dc]/80 border-[#e0d6c5] text-[#5e5344] hover:text-[#1a1612] hover:bg-[#e6dece]'
               }`}
             >
               <div className="w-6 h-6 rounded-lg overflow-hidden bg-neutral-900 shrink-0 border border-neutral-700/60">
@@ -74,10 +74,10 @@ export const CompareView = ({ locations, onOpenMapLocation, theme = 'dark' }) =>
       {/* Main Interactive Stage */}
       {selectedLoc && (
         <div className={`p-6 rounded-3xl border shadow-xl space-y-6 backdrop-blur-xl ${
-          isDark ? 'bg-black/60 border-neutral-800/60' : 'bg-white/85 border-slate-200 shadow-sm'
+          isDark ? 'bg-black/60 border-neutral-800/60' : 'bg-[#fcfbf7]/90 border-[#e5dcce] shadow-sm'
         }`}>
           <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-4 ${
-            isDark ? 'border-neutral-800/60' : 'border-slate-200'
+            isDark ? 'border-neutral-800/60' : 'border-[#e5dcce]'
           }`}>
             <div>
               <div className="flex items-center gap-2 text-xs font-mono opacity-70 uppercase tracking-wider mb-1">
@@ -89,7 +89,7 @@ export const CompareView = ({ locations, onOpenMapLocation, theme = 'dark' }) =>
                 {selectedLoc.title}
               </h3>
             </div>
-            <span className={`text-xs max-w-md text-right hidden sm:block ${isDark ? 'text-neutral-400' : 'text-slate-500'}`}>
+            <span className={`text-xs max-w-md text-right hidden sm:block ${isDark ? 'text-neutral-400' : 'text-[#635747]'}`}>
               {selectedLoc.subtitle}
             </span>
           </div>
@@ -102,17 +102,18 @@ export const CompareView = ({ locations, onOpenMapLocation, theme = 'dark' }) =>
             modernYear={selectedLoc.modernYear}
             archiveCaption={selectedLoc.archiveImageCaption}
             modernCaption={selectedLoc.modernImageCaption}
+            theme={theme}
           />
 
           {/* Chronicle Fact Card */}
           <div className={`p-5 rounded-2xl border space-y-2 backdrop-blur-md ${
-            isDark ? 'bg-neutral-900/60 border-neutral-800/60' : 'bg-slate-50 border-slate-200 text-slate-800'
+            isDark ? 'bg-neutral-900/60 border-neutral-800/60' : 'bg-[#f7f3eb] border-[#e5dcce] text-[#2c261e]'
           }`}>
             <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider font-semibold">
               <BookOpen className="w-4 h-4" />
               <span>Историко-градостроительная хроника</span>
             </div>
-            <p className={`text-xs sm:text-sm leading-relaxed font-sans ${isDark ? 'text-neutral-300' : 'text-slate-700'}`}>
+            <p className={`text-xs sm:text-sm leading-relaxed font-sans ${isDark ? 'text-neutral-300' : 'text-[#5e5344]'}`}>
               {selectedLoc.historicalFact}
             </p>
           </div>

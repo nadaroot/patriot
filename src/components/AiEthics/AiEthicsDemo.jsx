@@ -150,23 +150,23 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
 
   return (
     <div className={`max-w-5xl mx-auto space-y-4 transition-colors ${
-      isDark ? 'text-neutral-100' : 'text-neutral-900'
+      isDark ? 'text-neutral-100' : 'text-[#2c261e]'
     }`}>
       
       {/* Top Header Card */}
       <div className={`p-4 sm:p-6 rounded-3xl backdrop-blur-xl border shadow-xl flex items-center justify-between gap-3 transition-colors ${
         isDark 
           ? 'bg-black/60 border-neutral-800/60' 
-          : 'bg-white/90 border-neutral-200'
+          : 'bg-[#fbf9f4]/90 border-[#e5dcce]'
       }`}>
         <div>
           <h2 className={`font-bold text-xl sm:text-2xl tracking-tight flex items-center gap-2 ${
-            isDark ? 'text-white' : 'text-neutral-900'
+            isDark ? 'text-white' : 'text-[#2c261e]'
           }`}>
             <Sparkles className="w-5 h-5" />
             <span>ИИ-исследователь Минска</span>
           </h2>
-          <p className={`text-xs mt-0.5 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+          <p className={`text-xs mt-0.5 ${isDark ? 'text-neutral-400' : 'text-[#635747]'}`}>
             Исторические архивы, градостроительные хроники и консультации по утраченному наследию
           </p>
         </div>
@@ -178,7 +178,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
             className={`px-3.5 py-2 rounded-xl font-semibold text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95 ${
               isDark 
                 ? 'bg-white hover:bg-neutral-200 text-black' 
-                : 'bg-neutral-900 hover:bg-black text-white'
+                : 'bg-[#2c261e] hover:bg-[#1a1612] text-[#fbf9f4]'
             }`}
             title="Создать новый чат"
           >
@@ -191,7 +191,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
             className={`p-2 sm:px-3 sm:py-2 rounded-xl border text-xs font-medium flex items-center gap-1.5 transition-colors ${
               isDark 
                 ? 'bg-neutral-900/60 border-neutral-800/70 text-neutral-300 hover:text-white' 
-                : 'bg-neutral-100 border-neutral-200 text-neutral-700 hover:text-black hover:bg-neutral-200'
+                : 'bg-[#efe8dc] border-[#e0d6c5] text-[#5e5344] hover:text-[#1a1612] hover:bg-[#e4dcce]'
             }`}
             title="История диалогов"
           >
@@ -209,14 +209,14 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
           <div className={`p-3.5 rounded-3xl backdrop-blur-xl border shadow-xl space-y-2 max-h-[580px] overflow-y-auto scrollbar-none transition-colors ${
             isDark 
               ? 'bg-black/60 border-neutral-800/60' 
-              : 'bg-white/90 border-neutral-200'
+              : 'bg-[#fbf9f4]/90 border-[#e5dcce]'
           }`}>
             <div className={`flex items-center justify-between px-1 text-xs font-mono font-semibold mb-2 ${
-              isDark ? 'text-neutral-400' : 'text-neutral-500'
+              isDark ? 'text-neutral-400' : 'text-[#7e715f]'
             }`}>
               <span>Сохранённые чаты:</span>
               <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-                isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-neutral-100 text-neutral-700'
+                isDark ? 'bg-neutral-900 text-neutral-400' : 'bg-[#efe8dc] text-[#5e5344]'
               }`}>{chats.length}</span>
             </div>
 
@@ -233,14 +233,14 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
                     isActive
                       ? isDark 
                         ? 'bg-neutral-850/80 border-neutral-700/80 text-white font-medium shadow-md' 
-                        : 'bg-neutral-200 border-neutral-300 text-neutral-900 font-semibold shadow-xs'
+                        : 'bg-[#efe8dc] border-[#ded4c3] text-[#1a1612] font-semibold shadow-xs'
                       : isDark 
                         ? 'bg-neutral-950/40 border-neutral-850/50 text-neutral-400 hover:text-white hover:bg-neutral-900/50' 
-                        : 'bg-neutral-50 border-neutral-200/80 text-neutral-600 hover:text-black hover:bg-neutral-100'
+                        : 'bg-[#f7f3eb]/70 border-[#e5dcce] text-[#5e5344] hover:text-[#1a1612] hover:bg-[#efe8dc]'
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
-                    <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`} />
+                    <MessageSquare className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-neutral-400' : 'text-[#8a7a66]'}`} />
                     <span className="truncate">{c.title || 'Новый диалог'}</span>
                   </div>
 
@@ -263,7 +263,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
         } md:col-span-3 ${
           isDark 
             ? 'bg-black/60 border-neutral-800/60' 
-            : 'bg-white/90 border-neutral-200'
+            : 'bg-[#fcfbf7]/90 border-[#e5dcce]'
         }`}>
           
           {/* Messages list */}
@@ -279,7 +279,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
                     <div className={`w-8 h-8 rounded-xl border flex items-center justify-center shrink-0 shadow-md ${
                       isDark 
                         ? 'bg-neutral-900/80 border-neutral-800 text-white' 
-                        : 'bg-neutral-100 border-neutral-300 text-black'
+                        : 'bg-[#efe8dc] border-[#e0d6c5] text-[#1a1612]'
                     }`}>
                       <Bot className="w-4 h-4" />
                     </div>
@@ -290,10 +290,10 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
                       isUser
                         ? isDark 
                           ? 'bg-white text-black font-medium shadow-md' 
-                          : 'bg-neutral-900 text-white font-medium shadow-md'
+                          : 'bg-[#2c261e] text-[#fbf9f4] font-medium shadow-md'
                         : isDark 
                           ? 'bg-neutral-900/60 border border-neutral-800/70 text-neutral-200' 
-                          : 'bg-neutral-50 border border-neutral-200/90 text-neutral-800 shadow-2xs'
+                          : 'bg-[#f4efe4] border border-[#e5dcce] text-[#2c261e] shadow-2xs'
                     }`}
                   >
                     {msg.content}
@@ -303,7 +303,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-md font-bold text-xs ${
                       isDark 
                         ? 'bg-white text-black' 
-                        : 'bg-neutral-900 text-white'
+                        : 'bg-[#2c261e] text-[#fbf9f4]'
                     }`}>
                       <User className="w-4 h-4" />
                     </div>
@@ -314,9 +314,9 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
 
             {isLoading && (
               <div className={`flex items-center gap-2 text-xs p-2 font-mono ${
-                isDark ? 'text-neutral-400' : 'text-neutral-600'
+                isDark ? 'text-neutral-400' : 'text-[#635747]'
               }`}>
-                <Zap className="w-4 h-4 animate-spin text-amber-400" />
+                <Zap className="w-4 h-4 animate-spin text-amber-500" />
                 <span>ИИ формирует историческую выписку из архива...</span>
               </div>
             )}
@@ -327,7 +327,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
           <div className={`p-3 border-t transition-colors ${
             isDark 
               ? 'border-neutral-800/60 bg-neutral-950/40' 
-              : 'border-neutral-200 bg-neutral-50/70'
+              : 'border-[#e5dcce] bg-[#f7f3eb]/90'
           }`}>
             <form
               onSubmit={(e) => {
@@ -344,7 +344,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
                 className={`flex-1 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm focus:outline-none transition-all font-sans ${
                   isDark 
                     ? 'bg-neutral-900/60 border-neutral-800/70 text-white placeholder:text-neutral-500 focus:border-neutral-600' 
-                    : 'bg-white border-neutral-300 text-neutral-900 placeholder:text-neutral-400 focus:border-neutral-400 shadow-2xs'
+                    : 'bg-[#ffffff] border-[#ded4c3] text-[#2c261e] placeholder:text-[#998b77] focus:border-[#b8a78e] shadow-2xs'
                 }`}
               />
               <button
@@ -353,7 +353,7 @@ export const AiEthicsDemo = ({ theme = 'dark' }) => {
                 className={`px-4 py-2.5 rounded-2xl disabled:opacity-40 font-semibold text-xs flex items-center gap-2 transition-all shadow-md active:scale-95 shrink-0 ${
                   isDark 
                     ? 'bg-white hover:bg-neutral-200 text-black' 
-                    : 'bg-neutral-900 hover:bg-black text-white'
+                    : 'bg-[#2c261e] hover:bg-[#1a1612] text-[#fbf9f4]'
                 }`}
               >
                 <span>Отправить</span>

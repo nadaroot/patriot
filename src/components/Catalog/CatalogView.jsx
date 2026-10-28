@@ -14,22 +14,22 @@ export const CatalogView = ({
       
       {/* Header */}
       <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b ${
-        isDark ? 'border-neutral-800/60 text-white' : 'border-slate-200 text-slate-900'
+        isDark ? 'border-neutral-800/60 text-white' : 'border-[#e5dcce] text-[#2c261e]'
       }`}>
         <div>
           <h2 className="font-bold text-2xl sm:text-3xl tracking-tight">
             Архивные локации Минска
           </h2>
-          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-neutral-400' : 'text-slate-500'}`}>
+          <p className={`text-xs sm:text-sm mt-1 ${isDark ? 'text-neutral-400' : 'text-[#635747]'}`}>
             Коллекция исторических объектов с подтверждёнными архивными фотосвидетельствами
           </p>
         </div>
         <div className={`text-xs font-mono px-3 py-1.5 rounded-xl border self-start sm:self-auto backdrop-blur-md ${
           isDark 
             ? 'bg-neutral-900/60 border-neutral-800/60 text-neutral-400' 
-            : 'bg-slate-100 border-slate-200 text-slate-600'
+            : 'bg-[#efe8dc] border-[#e0d6c5] text-[#5e5344]'
         }`}>
-          Объектов в базе: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{locations.length}</strong>
+          Объектов в базе: <strong className={isDark ? 'text-white' : 'text-[#2c261e]'}>{locations.length}</strong>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export const CatalogView = ({
               className={`rounded-3xl overflow-hidden border shadow-xl hover:shadow-2xl transition-all duration-300 flex flex-col group ${
                 isDark 
                   ? 'bg-neutral-950/70 border-neutral-800/70 hover:border-neutral-700 text-neutral-100' 
-                  : 'bg-white border-slate-200 hover:border-slate-300 text-slate-900 shadow-sm'
+                  : 'bg-[#fcfbf7] border-[#e5dcce] hover:border-[#cfc3af] text-[#2c261e] shadow-sm'
               }`}
             >
               {/* Photo */}
@@ -71,19 +71,19 @@ export const CatalogView = ({
                   <h3 className="font-bold text-base sm:text-lg leading-snug transition-colors">
                     {loc.title}
                   </h3>
-                  <p className={`text-xs line-clamp-2 leading-relaxed ${isDark ? 'text-neutral-400' : 'text-slate-500'}`}>
+                  <p className={`text-xs line-clamp-2 leading-relaxed ${isDark ? 'text-neutral-400' : 'text-[#635747]'}`}>
                     {loc.subtitle}
                   </p>
                 </div>
 
                 {/* Buttons */}
-                <div className={`pt-3 border-t flex items-center gap-2 ${isDark ? 'border-neutral-800/60' : 'border-slate-100'}`}>
+                <div className={`pt-3 border-t flex items-center gap-2 ${isDark ? 'border-neutral-800/60' : 'border-[#e5dcce]'}`}>
                   <button
                     onClick={() => onSelectLocation(loc)}
                     className={`flex-1 py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                       isDark 
                         ? 'bg-neutral-900/80 border border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-800' 
-                        : 'bg-slate-100 border border-slate-200 text-slate-800 hover:bg-slate-200 hover:text-black'
+                        : 'bg-[#efe8dc] border border-[#e0d6c5] text-[#2c261e] hover:bg-[#e4dcce]'
                     }`}
                   >
                     <Split className="w-3.5 h-3.5" />
@@ -95,7 +95,7 @@ export const CatalogView = ({
                     className={`p-2 rounded-xl transition-all shadow-sm active:scale-95 ${
                       isDark 
                         ? 'bg-white hover:bg-neutral-200 text-black' 
-                        : 'bg-slate-900 hover:bg-black text-white'
+                        : 'bg-[#2c261e] hover:bg-[#1a1612] text-[#fbf9f4]'
                     }`}
                     title="Показать на карте"
                   >

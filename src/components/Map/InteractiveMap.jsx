@@ -42,19 +42,19 @@ export const InteractiveMap = ({
 
     const minskCenter = [27.5615, 53.9045];
 
-    // Build solid inline style that renders immediately with zero external JSON dependencies
+    // Build solid inline style using 100% reliable, keyless Esri raster tiles
     const inlineStyle = {
       version: 8,
       sources: {
-        'carto-tiles': {
+        'esri-scheme': {
           type: 'raster',
           tiles: [
             isDark
-              ? 'https://a.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png'
-              : 'https://a.basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png'
+              ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
+              : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
           ],
           tileSize: 256,
-          attribution: 'CARTO'
+          attribution: 'Esri'
         },
         'esri-satellite': {
           type: 'raster',
@@ -67,9 +67,9 @@ export const InteractiveMap = ({
       },
       layers: [
         {
-          id: 'carto-layer',
+          id: 'scheme-layer',
           type: 'raster',
-          source: 'carto-tiles',
+          source: 'esri-scheme',
           minzoom: 0,
           maxzoom: 20,
           layout: {
@@ -143,58 +143,11 @@ export const InteractiveMap = ({
         type: 'fill-extrusion',
         source: '3d-monuments-source',
         paint: {
-          'fill-extrusion-color': isDark ? '#52525b' : '#94a3b8',
+          'fill-extrusion-color': isDark ? '#52525b' : '#a89d89',
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-base': 0,
           'fill-extrusion-opacity': is3D ? 0.85 : 0.0,
           'fill-extrusion-vertical-gradient': true
-        }
-      });
-
-      // Add WebGL ground anchor circles source
-      const geojsonFeatures = locations.map((loc) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [loc.coords[1], loc.coords[0]]
-        },
-        properties: {
-          id: loc.id,
-          title: loc.title
-        }
-      }));
-
-      map.addSource('locations-points', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: geojsonFeatures
-        }
-      });
-
-      // WebGL ground rings that never drift
-      map.addLayer({
-        id: 'location-rings',
-        type: 'circle',
-        source: 'locations-points',
-        paint: {
-          'circle-radius': 14,
-          'circle-color': isDark ? '#ffffff' : '#0f172a',
-          'circle-opacity': 0.15,
-          'circle-pitch-alignment': 'map'
-        }
-      });
-
-      map.addLayer({
-        id: 'location-dots',
-        type: 'circle',
-        source: 'locations-points',
-        paint: {
-          'circle-radius': 4.5,
-          'circle-color': isDark ? '#ffffff' : '#0f172a',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': isDark ? '#000000' : '#ffffff',
-          'circle-pitch-alignment': 'map'
         }
       });
     });
@@ -211,8 +164,8 @@ export const InteractiveMap = ({
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    if (map.getLayer('carto-layer') && map.getLayer('satellite-layer')) {
-      map.setLayoutProperty('carto-layer', 'visibility', mapType === 'satellite' ? 'none' : 'visible');
+    if (map.getLayer('scheme-layer') && map.getLayer('satellite-layer')) {
+      map.setLayoutProperty('scheme-layer', 'visibility', mapType === 'satellite' ? 'none' : 'visible');
       map.setLayoutProperty('satellite-layer', 'visibility', mapType === 'satellite' ? 'visible' : 'none');
     }
   }, [mapType]);
@@ -226,48 +179,45 @@ export const InteractiveMap = ({
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
 
-    // Update WebGL source data if ready
-    if (map.getSource('locations-points')) {
-      const geojsonFeatures = locations.map((loc) => ({
-        type: 'Feature',
-        geometry: {
-          type: 'Point',
-          coordinates: [loc.coords[1], loc.coords[0]]
-        },
-        properties: {
-          id: loc.id,
-          title: loc.title
-        }
-      }));
-      map.getSource('locations-points').setData({
-        type: 'FeatureCollection',
-        features: geojsonFeatures
-      });
-    }
-
     locations.forEach((loc) => {
       const isSelected = selectedLocation?.id === loc.id || activeCardLoc?.id === loc.id;
 
-      // Pin DOM container with explicit fixed dimensions
+      // Pin DOM container with zero background and 100% transparent bounds
       const el = document.createElement('div');
-      el.className = 'cursor-pointer select-none';
-      el.style.width = '28px';
-      el.style.height = '36px';
+      el.className = 'cursor-pointer select-none group';
+      el.style.width = '32px';
+      el.style.height = '42px';
+      el.style.backgroundColor = 'transparent';
+      el.style.border = 'none';
+
+      // Clean SVG pin colors
+      const pinFill = isSelected
+        ? (isDark ? '#ffffff' : '#b45309')
+        : (isDark ? '#18181b' : '#2c261e');
+
+      const pinStroke = isSelected
+        ? (isDark ? '#000000' : '#fef3c7')
+        : (isDark ? '#ffffff' : '#f8f5ee');
+
+      const pinCore = isSelected
+        ? (isDark ? '#000000' : '#ffffff')
+        : (isDark ? '#ffffff' : '#f8f5ee');
 
       el.innerHTML = `
-        <div class="relative w-full h-full group">
-          <svg width="28" height="36" viewBox="0 0 28 36" fill="none" class="transition-transform duration-150">
-            <path d="M14 0C6.268 0 0 6.268 0 14C0 24.5 14 36 14 36C14 36 28 24.5 28 14C28 6.268 21.732 0 14 0Z" 
-                  fill="${isSelected ? (isDark ? '#ffffff' : '#0f172a') : (isDark ? '#18181b' : '#ffffff')}" 
-                  stroke="${isSelected ? (isDark ? '#000000' : '#ffffff') : (isDark ? '#ffffff' : '#0f172a')}" 
-                  stroke-width="1.8"/>
-            <circle cx="14" cy="13" r="4.5" fill="${isSelected ? (isDark ? '#000000' : '#ffffff') : (isDark ? '#ffffff' : '#0f172a')}"/>
+        <div class="relative w-full h-full flex items-center justify-center pointer-events-auto">
+          <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:scale-115 transition-transform duration-200" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.38));">
+            <path d="M16 1C7.716 1 1 7.716 1 16C1 26.5 16 41 16 41C16 41 31 26.5 31 16C31 7.716 24.284 1 16 1Z" 
+                  fill="${pinFill}" 
+                  stroke="${pinStroke}" 
+                  stroke-width="2" 
+                  stroke-linejoin="round"/>
+            <circle cx="16" cy="16" r="5" fill="${pinCore}"/>
           </svg>
           <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
-            <div class="${isDark ? 'bg-black/75 text-white border-neutral-700/60' : 'bg-white/90 text-slate-900 border-slate-300 shadow-md'} text-[11px] font-semibold px-2.5 py-1 rounded-xl shadow-2xl whitespace-nowrap border backdrop-blur-xl">
+            <div class="${isDark ? 'bg-black/85 text-white border-neutral-700/60' : 'bg-[#fbf9f4]/95 text-[#2c261e] border-[#e5dcce] shadow-xl'} text-[11px] font-semibold px-2.5 py-1 rounded-xl shadow-2xl whitespace-nowrap border backdrop-blur-xl">
               ${loc.title}
             </div>
-            <div class="w-1.5 h-1.5 ${isDark ? 'bg-black/75 border-neutral-700/60' : 'bg-white/90 border-slate-300'} border-r border-b rotate-45 -mt-1"></div>
+            <div class="w-1.5 h-1.5 ${isDark ? 'bg-black/85 border-neutral-700/60' : 'bg-[#fbf9f4]/95 border-[#e5dcce]'} border-r border-b rotate-45 -mt-1"></div>
           </div>
         </div>
       `;
@@ -350,22 +300,22 @@ export const InteractiveMap = ({
 
   return (
     <div className={`relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden border shadow-2xl transition-colors ${
-      isDark ? 'border-neutral-800/60 bg-black' : 'border-slate-200 bg-slate-100'
+      isDark ? 'border-neutral-800/60 bg-black' : 'border-[#e5dcce] bg-[#efe8dc]'
     }`}>
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-      {/* Sleek Horizontal Control Capsule (Placed Horizontally as requested!) */}
+      {/* Sleek Horizontal Control Capsule */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl border shadow-xl backdrop-blur-xl transition-all">
         <div className={`flex items-center gap-1 p-0.5 rounded-xl ${
-          isDark ? 'bg-black/65 border border-neutral-800/80 text-white' : 'bg-white/85 border border-slate-200 text-slate-800 shadow-sm'
+          isDark ? 'bg-black/65 border border-neutral-800/80 text-white' : 'bg-[#fbf9f4]/90 border border-[#e5dcce] text-[#2c261e] shadow-sm'
         }`}>
           {/* Toggle Real 3D / 2D */}
           <button
             onClick={toggle3DMode}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               is3D 
-                ? isDark ? 'bg-white text-black shadow-xs' : 'bg-slate-900 text-white shadow-xs'
-                : isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-slate-600 hover:text-black hover:bg-slate-100'
+                ? isDark ? 'bg-white text-black shadow-xs' : 'bg-[#2c261e] text-[#fbf9f4] shadow-xs'
+                : isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
             title={is3D ? 'Включён режим 3D. Нажмите для 2D' : 'Включить режим 3D зданий'}
           >
@@ -378,8 +328,8 @@ export const InteractiveMap = ({
             onClick={() => setMapType(mapType === 'satellite' ? 'scheme' : 'satellite')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               mapType === 'satellite'
-                ? isDark ? 'bg-white text-black shadow-xs' : 'bg-slate-900 text-white shadow-xs'
-                : isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-slate-600 hover:text-black hover:bg-slate-100'
+                ? isDark ? 'bg-white text-black shadow-xs' : 'bg-[#2c261e] text-[#fbf9f4] shadow-xs'
+                : isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
             title="Переключить спутниковый снимок / схему"
           >
@@ -387,13 +337,13 @@ export const InteractiveMap = ({
             <span>{mapType === 'satellite' ? 'Спутник' : 'Схема'}</span>
           </button>
 
-          <div className={`h-4 w-px mx-0.5 ${isDark ? 'bg-neutral-800' : 'bg-slate-200'}`} />
+          <div className={`h-4 w-px mx-0.5 ${isDark ? 'bg-neutral-800' : 'bg-[#e5dcce]'}`} />
 
           {/* Compass */}
           <button
             onClick={resetBearing}
             className={`p-1.5 rounded-lg transition-colors ${
-              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-slate-600 hover:text-black hover:bg-slate-100'
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
             title={`Компас (поворот ${bearing}°)`}
           >
@@ -407,7 +357,7 @@ export const InteractiveMap = ({
           <button
             onClick={() => mapInstanceRef.current?.zoomIn()}
             className={`p-1.5 rounded-lg transition-colors ${
-              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-slate-600 hover:text-black hover:bg-slate-100'
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
             title="Приблизить (+)"
           >
@@ -418,7 +368,7 @@ export const InteractiveMap = ({
           <button
             onClick={() => mapInstanceRef.current?.zoomOut()}
             className={`p-1.5 rounded-lg transition-colors ${
-              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-slate-600 hover:text-black hover:bg-slate-100'
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
             title="Отдалить (-)"
           >
@@ -429,7 +379,7 @@ export const InteractiveMap = ({
           <button
             onClick={centerMinsk}
             className={`p-1.5 rounded-lg transition-colors ${
-              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-slate-600 hover:text-black hover:bg-slate-100'
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
             title="Центр Минска"
           >
@@ -443,8 +393,8 @@ export const InteractiveMap = ({
         <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:max-w-md z-30 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className={`p-4 rounded-3xl border shadow-2xl backdrop-blur-2xl transition-all ${
             isDark 
-              ? 'bg-black/65 border-neutral-700/60 text-white' 
-              : 'bg-white/90 border-slate-200 text-slate-900 shadow-xl'
+              ? 'bg-black/75 border-neutral-700/60 text-white' 
+              : 'bg-[#fbf9f4]/95 border-[#e5dcce] text-[#2c261e] shadow-xl'
           }`}>
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -456,7 +406,9 @@ export const InteractiveMap = ({
                   />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-400 mb-0.5">
+                  <div className={`flex items-center gap-2 text-[10px] font-mono mb-0.5 ${
+                    isDark ? 'text-neutral-400' : 'text-[#8a7a66]'
+                  }`}>
                     <span className="font-semibold">{activeCardLoc.district}</span>
                     <span>•</span>
                     <span>{activeCardLoc.archiveYear}</span>
@@ -464,7 +416,9 @@ export const InteractiveMap = ({
                   <h4 className="font-bold text-sm leading-snug">
                     {activeCardLoc.title}
                   </h4>
-                  <p className="text-xs opacity-75 line-clamp-1 mt-0.5">
+                  <p className={`text-xs line-clamp-1 mt-0.5 ${
+                    isDark ? 'opacity-75' : 'text-[#635747]'
+                  }`}>
                     {activeCardLoc.subtitle}
                   </p>
                 </div>
@@ -472,7 +426,9 @@ export const InteractiveMap = ({
 
               <button
                 onClick={() => setActiveCardLoc(null)}
-                className="p-1 rounded-lg text-neutral-400 hover:text-neutral-200"
+                className={`p-1 rounded-lg ${
+                  isDark ? 'text-neutral-400 hover:text-neutral-200' : 'text-[#8a7a66] hover:text-[#2c261e]'
+                }`}
                 aria-label="Закрыть карточку"
               >
                 <X className="w-4 h-4" />
@@ -481,14 +437,14 @@ export const InteractiveMap = ({
 
             {/* Quick Actions */}
             <div className={`mt-3 pt-3 border-t flex items-center gap-2 ${
-              isDark ? 'border-neutral-800/60' : 'border-slate-200'
+              isDark ? 'border-neutral-800/60' : 'border-[#e5dcce]'
             }`}>
               <button
                 onClick={() => onSelectLocation(activeCardLoc)}
                 className={`flex-1 py-2 px-3 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   isDark
                     ? 'bg-white text-black hover:bg-neutral-200'
-                    : 'bg-slate-900 text-white hover:bg-black shadow-xs'
+                    : 'bg-[#2c261e] text-[#fbf9f4] hover:bg-[#1a1612] shadow-xs'
                 }`}
               >
                 <Split className="w-3.5 h-3.5" />
@@ -498,7 +454,9 @@ export const InteractiveMap = ({
               <button
                 onClick={() => onSelectLocation(activeCardLoc)}
                 className={`p-2 rounded-xl border transition-colors ${
-                  isDark ? 'border-neutral-700/60 hover:bg-neutral-800/40 text-neutral-300' : 'border-slate-200 hover:bg-slate-100 text-slate-700'
+                  isDark 
+                    ? 'border-neutral-700/60 hover:bg-neutral-800/40 text-neutral-300' 
+                    : 'border-[#e0d6c5] hover:bg-[#efe8dc] text-[#5e5344]'
                 }`}
                 title="Подробная архивная справка"
               >

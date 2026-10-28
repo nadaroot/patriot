@@ -18,7 +18,7 @@ export const MobileBottomNav = ({
     <nav className={`fixed bottom-0 left-0 right-0 z-40 backdrop-blur-xl border-t md:hidden shadow-2xl safe-bottom transition-colors ${
       isDark
         ? 'bg-neutral-950/95 border-neutral-850 text-white'
-        : 'bg-white/95 border-neutral-200 text-neutral-900'
+        : 'bg-[#fbf9f4]/95 border-[#e5dcce] text-[#2c261e]'
     }`}>
       <div className="flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
@@ -30,13 +30,13 @@ export const MobileBottomNav = ({
               onClick={() => onTabChange(item.id)}
               className={`flex-1 flex flex-col items-center justify-center py-1 transition-colors ${
                 isActive 
-                  ? isDark ? 'text-white font-semibold' : 'text-neutral-900 font-semibold'
-                  : isDark ? 'text-neutral-500 hover:text-neutral-300' : 'text-neutral-400 hover:text-neutral-700'
+                  ? isDark ? 'text-white font-semibold' : 'text-[#2c261e] font-semibold'
+                  : isDark ? 'text-neutral-500 hover:text-neutral-300' : 'text-[#8c8071] hover:text-[#2c261e]'
               }`}
             >
               <div className={`p-1.5 rounded-xl transition-all ${
                 isActive 
-                  ? isDark ? 'bg-neutral-850 text-white' : 'bg-neutral-100 text-black shadow-xs'
+                  ? isDark ? 'bg-neutral-850 text-white' : 'bg-[#efe8dc] text-[#2c261e] shadow-xs'
                   : ''
               }`}>
                 <Icon className="w-5 h-5" />

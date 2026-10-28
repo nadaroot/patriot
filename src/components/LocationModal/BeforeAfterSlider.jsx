@@ -108,9 +108,9 @@ export const BeforeAfterSlider = ({
         <div className={`p-3.5 rounded-2xl border backdrop-blur-xl transition-colors ${
           isDark 
             ? 'bg-neutral-900/60 border-neutral-800/60 text-neutral-400' 
-            : 'bg-white border-neutral-200 text-neutral-600 shadow-2xs'
+            : 'bg-[#f7f3eb] border-[#e5dcce] text-[#635747] shadow-2xs'
         }`}>
-          <span className={`font-semibold block mb-1 ${isDark ? 'text-neutral-200' : 'text-neutral-900'}`}>
+          <span className={`font-semibold block mb-1 ${isDark ? 'text-neutral-200' : 'text-[#2c261e]'}`}>
             Слева (Архивный кадр):
           </span>
           <p className="leading-relaxed">{archiveCaption || 'Исторический снимок из фондов БГАКФФД.'}</p>
@@ -118,9 +118,9 @@ export const BeforeAfterSlider = ({
         <div className={`p-3.5 rounded-2xl border backdrop-blur-xl transition-colors ${
           isDark 
             ? 'bg-neutral-900/60 border-neutral-800/60 text-neutral-400' 
-            : 'bg-white border-neutral-200 text-neutral-600 shadow-2xs'
+            : 'bg-[#f7f3eb] border-[#e5dcce] text-[#635747] shadow-2xs'
         }`}>
-          <span className={`font-semibold block mb-1 ${isDark ? 'text-neutral-200' : 'text-neutral-900'}`}>
+          <span className={`font-semibold block mb-1 ${isDark ? 'text-neutral-200' : 'text-[#2c261e]'}`}>
             Справа (Современный вид):
           </span>
           <p className="leading-relaxed">{modernCaption || 'Современное состояние локации в городской среде.'}</p>

@@ -33,7 +33,7 @@ export const Header = ({
     <header className={`sticky top-0 z-40 transition-colors backdrop-blur-xl border-b ${
       isDark 
         ? 'bg-black/60 border-neutral-800/60 text-white' 
-        : 'bg-white/80 border-neutral-200/80 text-neutral-900 shadow-xs'
+        : 'bg-[#fbf9f4]/85 border-[#e5dcce]/80 text-[#2c261e] shadow-xs'
     }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -47,7 +47,7 @@ export const Header = ({
               <div className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-colors ${
                 isDark 
                   ? 'bg-neutral-900/60 border-neutral-800 text-white group-hover:border-neutral-600' 
-                  : 'bg-neutral-100 border-neutral-300 text-black group-hover:border-neutral-400'
+                  : 'bg-[#efe8dc] border-[#e0d6c5] text-[#1a1612] group-hover:border-[#cfc3af]'
               }`}>
                 <Compass className="w-4 h-4 group-hover:rotate-45 transition-transform duration-300" />
               </div>
@@ -62,7 +62,7 @@ export const Header = ({
               className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
                 isDark 
                   ? 'bg-neutral-900/60 border-neutral-800/80 text-neutral-300 hover:text-white hover:bg-neutral-850' 
-                  : 'bg-neutral-100/80 border-neutral-300/80 text-neutral-700 hover:text-black hover:bg-neutral-200'
+                  : 'bg-[#efe8dc]/80 border-[#e0d6c5] text-[#5e5344] hover:text-[#1a1612] hover:bg-[#e6dece]'
               }`}
               title="Открыть навигатор со всеми локациями города"
             >
@@ -84,10 +84,10 @@ export const Header = ({
                     isActive
                       ? isDark 
                         ? 'bg-neutral-850/80 text-white border border-neutral-700/80 shadow-xs' 
-                        : 'bg-neutral-900 text-white border border-neutral-900 shadow-xs'
+                        : 'bg-[#2c261e] text-[#fbf9f4] border border-[#2c261e] shadow-xs'
                       : isDark 
                         ? 'text-neutral-400 hover:text-white hover:bg-neutral-900/50' 
-                        : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
+                        : 'text-[#6a5e4f] hover:text-[#1a1612] hover:bg-[#efe8dc]'
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -100,21 +100,21 @@ export const Header = ({
           {/* Right Controls: Theme Toggle & Mobile Menu */}
           <div className="flex items-center gap-2">
             
-            {/* Theme Toggle (Replaced Patriot AI badge) */}
+            {/* Theme Toggle */}
             <button
               onClick={onToggleTheme}
               className={`p-2 rounded-xl border transition-all ${
                 isDark 
                   ? 'bg-neutral-900/70 border-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-800' 
-                  : 'bg-neutral-100 border-neutral-300 text-neutral-800 hover:text-black hover:bg-neutral-200'
+                  : 'bg-[#efe8dc] border-[#e0d6c5] text-[#2c261e] hover:text-[#1a1612] hover:bg-[#e4dcce]'
               }`}
-              title={isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
+              title={isDark ? 'Переключить на бежевую тему' : 'Переключить на тёмную тему'}
               aria-label="Смена темы"
             >
               {isDark ? (
                 <Sun className="w-4 h-4 text-amber-300" />
               ) : (
-                <Moon className="w-4 h-4 text-indigo-600" />
+                <Moon className="w-4 h-4 text-[#78350f]" />
               )}
             </button>
 
@@ -124,7 +124,7 @@ export const Header = ({
               className={`sm:hidden p-2 rounded-xl border text-xs font-semibold ${
                 isDark 
                   ? 'bg-neutral-900 border-neutral-800 text-neutral-300' 
-                  : 'bg-neutral-100 border-neutral-300 text-neutral-800'
+                  : 'bg-[#efe8dc] border-[#e0d6c5] text-[#2c261e]'
               }`}
               title="Навигатор"
             >
@@ -137,7 +137,7 @@ export const Header = ({
               className={`md:hidden p-2 rounded-xl border ${
                 isDark 
                   ? 'border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-900' 
-                  : 'border-neutral-300 text-neutral-600 hover:text-black hover:bg-neutral-100'
+                  : 'border-[#e0d6c5] text-[#6a5e4f] hover:text-[#1a1612] hover:bg-[#efe8dc]'
               }`}
               aria-label="Меню"
             >
@@ -150,7 +150,7 @@ export const Header = ({
       {/* Mobile Dropdown */}
       {mobileMenuOpen && (
         <div className={`md:hidden border-b px-4 pt-2 pb-4 space-y-1 ${
-          isDark ? 'bg-black/95 border-neutral-800/80' : 'bg-white/95 border-neutral-200'
+          isDark ? 'bg-black/95 border-neutral-800/80' : 'bg-[#fbf9f4]/98 border-[#e5dcce]'
         }`}>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -166,10 +166,10 @@ export const Header = ({
                   isActive
                     ? isDark 
                       ? 'bg-neutral-850 text-white border border-neutral-750' 
-                      : 'bg-neutral-900 text-white'
+                      : 'bg-[#2c261e] text-[#fbf9f4]'
                     : isDark 
                       ? 'text-neutral-400 hover:text-white hover:bg-neutral-900/60' 
-                      : 'text-neutral-700 hover:text-black hover:bg-neutral-100'
+                      : 'text-[#6a5e4f] hover:text-[#1a1612] hover:bg-[#efe8dc]'
                 }`}
               >
                 <Icon className="w-4 h-4" />
