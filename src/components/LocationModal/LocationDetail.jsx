@@ -5,9 +5,7 @@ import {
   Split, 
   BookOpen, 
   Share2, 
-  Check,
-  Calendar,
-  Layers
+  Check
 } from 'lucide-react';
 import { BeforeAfterSlider } from './BeforeAfterSlider';
 
@@ -29,11 +27,11 @@ export const LocationDetail = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-neutral-950 border border-neutral-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200">
+      <div className="relative w-full max-w-4xl bg-neutral-950/80 backdrop-blur-2xl border border-neutral-800/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         
         {/* Header */}
-        <div className="p-5 sm:p-7 border-b border-neutral-850 bg-neutral-900/60 relative">
+        <div className="p-5 sm:p-7 border-b border-neutral-800/60 bg-neutral-900/40 relative">
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 uppercase tracking-wider font-semibold">
@@ -55,14 +53,14 @@ export const LocationDetail = ({
               <button
                 onClick={handleShare}
                 title="Поделиться ссылкой"
-                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-300 hover:text-white hover:bg-neutral-850 text-xs font-medium flex items-center gap-1.5 transition-colors"
+                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-neutral-900/60 border border-neutral-800/70 text-neutral-300 hover:text-white hover:bg-neutral-850 text-xs font-medium flex items-center gap-1.5 transition-colors"
               >
                 {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Share2 className="w-4 h-4 text-neutral-300" />}
                 <span className="hidden sm:inline">{copied ? 'Скопировано' : 'Поделиться'}</span>
               </button>
               <button
                 onClick={onClose}
-                className="p-2 rounded-xl bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-850 transition-colors"
+                className="p-2 rounded-xl bg-neutral-900/60 border border-neutral-800/70 text-neutral-400 hover:text-white hover:bg-neutral-850 transition-colors"
                 aria-label="Закрыть"
               >
                 <X className="w-5 h-5" />
@@ -71,13 +69,13 @@ export const LocationDetail = ({
           </div>
 
           {/* Navigation Tabs */}
-          <div className="flex items-center gap-1.5 sm:gap-2 mt-5 pt-3 border-t border-neutral-800 overflow-x-auto scrollbar-none text-xs sm:text-sm">
+          <div className="flex items-center gap-1.5 sm:gap-2 mt-5 pt-3 border-t border-neutral-800/60 overflow-x-auto scrollbar-none text-xs sm:text-sm">
             <button
               onClick={() => setActiveTab('slider')}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-medium transition-all ${
                 activeTab === 'slider'
                   ? 'bg-white text-black font-semibold shadow-xs'
-                  : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
+                  : 'bg-neutral-900/50 border border-neutral-800/60 text-neutral-400 hover:text-white'
               }`}
             >
               <Split className="w-4 h-4" />
@@ -89,7 +87,7 @@ export const LocationDetail = ({
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl font-medium transition-all ${
                 activeTab === 'history'
                   ? 'bg-white text-black font-semibold shadow-xs'
-                  : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white'
+                  : 'bg-neutral-900/50 border border-neutral-800/60 text-neutral-400 hover:text-white'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -118,7 +116,7 @@ export const LocationDetail = ({
           {/* TAB 2: ARCHIVE CHRONICLE */}
           {activeTab === 'history' && (
             <div className="space-y-5">
-              <div className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 space-y-3">
+              <div className="p-5 rounded-2xl bg-neutral-900/60 border border-neutral-800/60 space-y-3 backdrop-blur-md">
                 <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-neutral-300 font-semibold">
                   <BookOpen className="w-4 h-4 text-white" />
                   <span>Официальная градостроительная хроника</span>
@@ -128,12 +126,12 @@ export const LocationDetail = ({
                 </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-neutral-900/60 border border-neutral-850 text-xs text-neutral-400 space-y-1">
+              <div className="p-4 rounded-xl bg-neutral-900/40 border border-neutral-850/60 text-xs text-neutral-400 space-y-1">
                 <div className="font-semibold text-neutral-200">
                   Источниковая база:
                 </div>
                 <p className="leading-relaxed">
-                  Материалы Белорусского государственного архива кинофотофонодокументов (БГАКФФД) и проектных институтов «Минскпроект».
+                  Материалы Белорусского государственного архива кинофотофонодокументов (БГАКФФД) и проектных институтов Минска.
                 </p>
               </div>
             </div>

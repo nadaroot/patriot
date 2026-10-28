@@ -4,14 +4,10 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
   Box, 
   Compass, 
-  RotateCw, 
   ZoomIn, 
   ZoomOut, 
   Crosshair, 
-  MapPin, 
-  ArrowUpRight,
-  Split,
-  Calendar
+  Layers
 } from 'lucide-react';
 
 export const InteractiveMap = ({
@@ -22,9 +18,8 @@ export const InteractiveMap = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
-  const [is3D, setIs3D] = useState(true);
-  const [bearing, setBearing] = useState(-20);
-  const [pitch, setPitch] = useState(55);
+  const [is3D, setIs3D] = useState(false); // Default is clean 2D top-down view
+  const [bearing, setBearing] = useState(0);
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -44,7 +39,11 @@ export const InteractiveMap = ({
               'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
             ],
             tileSize: 256,
-            attribution: 'Esri World Imagery 3D'
+            attribution: 'Esri World Imagery'
+          },
+          'openfreemap-vector': {
+            type: 'vector',
+            url: 'https://tiles.openfreemap.org/planet'
           }
         },
         layers: [
@@ -58,17 +57,107 @@ export const InteractiveMap = ({
         ]
       },
       center: minskCenter,
-      zoom: 13.8,
+      zoom: 13.5,
       minZoom: 10,
       maxZoom: 19,
-      pitch: 55, // 3D tilt perspective like Yandex Maps
-      bearing: -20, // 3D rotation angle
+      pitch: 0, // Clean 2D flat top-down by default
+      bearing: 0,
       maxPitch: 80,
       attributionControl: false,
     });
 
     map.on('rotate', () => setBearing(Math.round(map.getBearing())));
-    map.on('pitch', () => setPitch(Math.round(map.getPitch())));
+
+    map.on('load', () => {
+      // Add Real 3D building extrusions layer from vector tiles
+      try {
+        if (!map.getLayer('3d-buildings')) {
+          map.addLayer({
+            id: '3d-buildings',
+            source: 'openfreemap-vector',
+            'source-layer': 'building',
+            type: 'fill-extrusion',
+            minzoom: 13.5,
+            paint: {
+              'fill-extrusion-color': [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', 'render_height'], 15],
+                0, 'rgba(25, 25, 25, 0.85)',
+                30, 'rgba(45, 45, 45, 0.9)',
+                80, 'rgba(80, 80, 80, 0.95)'
+              ],
+              'fill-extrusion-height': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                13.5, 0,
+                14, ['coalesce', ['get', 'render_height'], 15]
+              ],
+              'fill-extrusion-base': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                13.5, 0,
+                14, ['coalesce', ['get', 'render_min_height'], 0]
+              ],
+              'fill-extrusion-opacity': 0.0 // hidden by default in 2D
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('3D building layer init:', e);
+      }
+
+      // Add WebGL ground anchor circles source
+      const geojsonFeatures = locations.map((loc) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [loc.coords[1], loc.coords[0]]
+        },
+        properties: {
+          id: loc.id,
+          title: loc.title
+        }
+      }));
+
+      if (!map.getSource('locations-points')) {
+        map.addSource('locations-points', {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: geojsonFeatures
+          }
+        });
+
+        // WebGL ground rings that never drift
+        map.addLayer({
+          id: 'location-rings',
+          type: 'circle',
+          source: 'locations-points',
+          paint: {
+            'circle-radius': 12,
+            'circle-color': '#ffffff',
+            'circle-opacity': 0.25,
+            'circle-pitch-alignment': 'map' // Locked flat to the ground plane!
+          }
+        });
+
+        map.addLayer({
+          id: 'location-dots',
+          type: 'circle',
+          source: 'locations-points',
+          paint: {
+            'circle-radius': 4.5,
+            'circle-color': '#ffffff',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#000000',
+            'circle-pitch-alignment': 'map' // Locked flat to the ground plane!
+          }
+        });
+      }
+    });
 
     mapInstanceRef.current = map;
 
@@ -78,37 +167,59 @@ export const InteractiveMap = ({
     };
   }, []);
 
-  // Update Markers
+  // Update Markers & Coordinates
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    // Clear previous markers
+    // Clear previous DOM markers
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
+
+    // Update WebGL source data if ready
+    if (map.getSource('locations-points')) {
+      const geojsonFeatures = locations.map((loc) => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [loc.coords[1], loc.coords[0]]
+        },
+        properties: {
+          id: loc.id,
+          title: loc.title
+        }
+      }));
+      map.getSource('locations-points').setData({
+        type: 'FeatureCollection',
+        features: geojsonFeatures
+      });
+    }
 
     locations.forEach((loc) => {
       const isSelected = selectedLocation?.id === loc.id;
 
-      // Custom 3D SVG marker pin
+      // Pin DOM container with explicit fixed dimensions
       const el = document.createElement('div');
-      el.className = 'group relative cursor-pointer select-none';
+      el.className = 'cursor-pointer select-none';
+      el.style.width = '28px';
+      el.style.height = '36px';
+
+      // SVG teardrop pin pointing strictly at bottom center (14, 36)
       el.innerHTML = `
-        <div class="relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${
-          isSelected
-            ? 'bg-white text-black ring-4 ring-white/40 scale-125 z-50 shadow-2xl'
-            : 'bg-black/90 text-white hover:bg-neutral-900 hover:scale-110 shadow-xl border border-neutral-700 hover:border-white'
-        }">
-          <svg class="w-4 h-4 ${isSelected ? 'text-black' : 'text-neutral-200'}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-            <circle cx="12" cy="10" r="3"/>
+        <div class="relative w-full h-full group">
+          <svg width="28" height="36" viewBox="0 0 28 36" fill="none" class="transition-transform duration-150">
+            <path d="M14 0C6.268 0 0 6.268 0 14C0 24.5 14 36 14 36C14 36 28 24.5 28 14C28 6.268 21.732 0 14 0Z" 
+                  fill="${isSelected ? '#ffffff' : '#0a0a0a'}" 
+                  stroke="${isSelected ? '#000000' : '#ffffff'}" 
+                  stroke-width="1.8"/>
+            <circle cx="14" cy="13" r="5" fill="${isSelected ? '#000000' : '#ffffff'}"/>
           </svg>
-        </div>
-        <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
-          <div class="bg-black text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-2xl whitespace-nowrap border border-neutral-800 backdrop-blur-md">
-            ${loc.title}
+          <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
+            <div class="bg-black/90 text-white text-[11px] font-medium px-2.5 py-1 rounded-lg shadow-2xl whitespace-nowrap border border-neutral-700/80 backdrop-blur-md">
+              ${loc.title}
+            </div>
+            <div class="w-1.5 h-1.5 bg-black/90 border-r border-b border-neutral-700/80 rotate-45 -mt-1"></div>
           </div>
-          <div class="w-2 h-2 bg-black border-r border-b border-neutral-800 rotate-45 -mt-1"></div>
         </div>
       `;
 
@@ -116,16 +227,19 @@ export const InteractiveMap = ({
         onSelectLocation(loc);
         map.flyTo({
           center: [loc.coords[1], loc.coords[0]],
-          zoom: 16.5,
-          pitch: 62,
-          bearing: -15,
-          duration: 1400,
+          zoom: 16.2,
+          pitch: is3D ? 58 : 0,
+          duration: 900,
           essential: true
         });
       });
 
-      // MapLibre takes [lng, lat]
-      const marker = new maplibregl.Marker({ element: el })
+      // Anchor strictly at bottom center so pin tip touches exact ground coordinate
+      const marker = new maplibregl.Marker({ 
+        element: el, 
+        anchor: 'bottom',
+        offset: [0, 0]
+      })
         .setLngLat([loc.coords[1], loc.coords[0]])
         .addTo(map);
 
@@ -135,31 +249,44 @@ export const InteractiveMap = ({
     if (selectedLocation) {
       map.flyTo({
         center: [selectedLocation.coords[1], selectedLocation.coords[0]],
-        zoom: 16.5,
-        pitch: 62,
-        bearing: -15,
-        duration: 1200,
+        zoom: 16.2,
+        pitch: is3D ? 58 : 0,
+        duration: 900,
         essential: true
       });
     }
-  }, [locations, selectedLocation, onSelectLocation]);
+  }, [locations, selectedLocation, is3D, onSelectLocation]);
 
+  // Toggle between 2D Top-down and Real 3D Extruded Buildings
   const toggle3DMode = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
+    
     if (is3D) {
-      map.easeTo({ pitch: 0, duration: 800 });
+      // Switch back to 2D
+      map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
       setIs3D(false);
+      try {
+        if (map.getLayer('3d-buildings')) {
+          map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.0);
+        }
+      } catch (e) {}
     } else {
-      map.easeTo({ pitch: 58, bearing: -20, duration: 800 });
+      // Activate Real 3D Extrusions + Tilt
+      map.easeTo({ pitch: 58, bearing: -18, duration: 900 });
       setIs3D(true);
+      try {
+        if (map.getLayer('3d-buildings')) {
+          map.setPaintProperty('3d-buildings', 'fill-extrusion-opacity', 0.88);
+        }
+      } catch (e) {}
     }
   };
 
   const resetBearing = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    map.easeTo({ bearing: 0, duration: 600 });
+    map.easeTo({ bearing: 0, duration: 500 });
   };
 
   const centerMinsk = () => {
@@ -167,45 +294,38 @@ export const InteractiveMap = ({
     if (!map) return;
     map.flyTo({
       center: [27.5615, 53.9045],
-      zoom: 13.8,
-      pitch: is3D ? 55 : 0,
-      bearing: -20,
-      duration: 1000
+      zoom: 13.5,
+      pitch: is3D ? 58 : 0,
+      bearing: is3D ? -18 : 0,
+      duration: 800
     });
   };
 
   return (
-    <div className="relative w-full h-full min-h-[520px] rounded-2xl overflow-hidden border border-neutral-850 shadow-2xl bg-black">
+    <div className="relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden border border-neutral-800/60 shadow-2xl bg-black">
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-      {/* Top Left Status Badge */}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
-        <div className="bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-neutral-800 shadow-xl flex items-center gap-2 text-xs font-medium text-neutral-200">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="font-mono text-[11px] text-neutral-300">Спутник 3D · Реалистичный режим</span>
-        </div>
-      </div>
-
-      {/* Top Right 3D Controls (Like Yandex Maps 3D) */}
-      <div className="absolute top-3 right-3 z-20 flex flex-col gap-1.5 bg-black/85 backdrop-blur-md p-1.5 rounded-2xl border border-neutral-800 shadow-2xl">
-        {/* Toggle 3D / 2D */}
+      {/* Compact Translucent Controls with Clear Tooltips */}
+      <div className="absolute top-3 right-3 z-20 flex flex-col gap-1 bg-black/60 backdrop-blur-xl p-1.5 rounded-2xl border border-neutral-800/70 shadow-2xl">
+        
+        {/* Toggle Real 3D / 2D */}
         <button
           onClick={toggle3DMode}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
             is3D 
               ? 'bg-white text-black shadow-md' 
-              : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+              : 'text-neutral-300 hover:text-white hover:bg-neutral-800/50'
           }`}
-          title="Переключить 3D перспективу"
+          title={is3D ? 'Включён режим 3D зданий. Нажмите для 2D' : 'Включить реальные 3D здания'}
         >
           <Box className="w-3.5 h-3.5" />
-          <span>{is3D ? '3D Активен' : '2D Режим'}</span>
+          <span>{is3D ? '3D Здания' : '2D Карта'}</span>
         </button>
 
         {/* Compass / Reset Rotation */}
         <button
           onClick={resetBearing}
-          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors"
+          className="p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800/50 flex items-center justify-center transition-colors"
           title={`Поворот карты: ${bearing}° (Нажмите для сброса на север)`}
         >
           <Compass 
@@ -217,8 +337,8 @@ export const InteractiveMap = ({
         {/* Zoom In */}
         <button
           onClick={() => mapInstanceRef.current?.zoomIn()}
-          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors"
-          title="Приблизить"
+          className="p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800/50 flex items-center justify-center transition-colors"
+          title="Приблизить карту (+)"
         >
           <ZoomIn className="w-4 h-4" />
         </button>
@@ -226,30 +346,20 @@ export const InteractiveMap = ({
         {/* Zoom Out */}
         <button
           onClick={() => mapInstanceRef.current?.zoomOut()}
-          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors"
-          title="Отдалить"
+          className="p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800/50 flex items-center justify-center transition-colors"
+          title="Отдалить карту (-)"
         >
           <ZoomOut className="w-4 h-4" />
         </button>
 
-        {/* Center */}
+        {/* Center Minsk */}
         <button
           onClick={centerMinsk}
-          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors border-t border-neutral-800"
-          title="Центрировать карту"
+          className="p-2 rounded-xl text-neutral-300 hover:text-white hover:bg-neutral-800/50 flex items-center justify-center transition-colors border-t border-neutral-800/60"
+          title="Центрировать на историческом центре Минска"
         >
           <Crosshair className="w-4 h-4" />
         </button>
-      </div>
-
-      {/* Bottom Hint */}
-      <div className="absolute bottom-3 left-3 z-20 hidden sm:flex items-center gap-3 bg-black/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-neutral-800 text-[11px] font-mono text-neutral-400 shadow-xl">
-        <div className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-white"></span>
-          <span className="text-neutral-200">10 архивных локаций</span>
-        </div>
-        <span>•</span>
-        <span>Зажмите правую кнопку мыши для свободного 3D-вращения</span>
       </div>
     </div>
   );

@@ -34,7 +34,7 @@ export function App() {
       }
 
       if (selectedCategory !== 'all') {
-        const hasCategory = (loc.categories || []).includes(selectedCategory);
+        const hasCategory = loc.category === selectedCategory || (loc.categories || []).includes(selectedCategory);
         if (!hasCategory) return false;
       }
 
@@ -50,7 +50,7 @@ export function App() {
   return (
     <div className="min-h-screen bg-black flex flex-col font-sans text-neutral-100 selection:bg-neutral-800 selection:text-white pb-16 md:pb-0">
       
-      {/* Header */}
+      {/* Translucent Header */}
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -59,7 +59,7 @@ export function App() {
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8">
         
-        {/* TAB 1: 3D INTERACTIVE SATELLITE MAP */}
+        {/* TAB 1: 2D TOP-DOWN / REAL 3D BUILDINGS MAP */}
         {activeTab === 'map' && (
           <div className="space-y-3 sm:space-y-4">
             <MapFilters
@@ -67,8 +67,6 @@ export function App() {
               onSearchChange={setSearchQuery}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
-              totalCount={locations.length}
-              filteredCount={filteredLocations.length}
             />
 
             <div className="h-[calc(100vh-235px)] min-h-[480px] sm:h-[660px] w-full">
@@ -104,13 +102,13 @@ export function App() {
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-neutral-850 bg-neutral-950/80 py-6 sm:py-8 px-4 text-center text-xs text-neutral-400 mb-16 md:mb-0">
+      {/* Translucent Footer */}
+      <footer className="border-t border-neutral-800/60 bg-black/60 backdrop-blur-xl py-6 sm:py-8 px-4 text-center text-xs text-neutral-400 mb-16 md:mb-0">
         <div className="max-w-4xl mx-auto space-y-2">
           <div className="font-semibold text-sm text-white">
             «Место помнит: Интерактивный архив исторической памяти Минска»
           </div>
-          <p className="max-w-xl mx-auto text-neutral-500 text-[11px] leading-relaxed">
+          <p className="max-w-xl mx-auto text-neutral-400 text-[11px] leading-relaxed">
             Проект фотофиксации и архитектурного сопоставления утраченного и сохранённого наследия. Подлинные архивные кадры и 3D-картография.
           </p>
           <div className="text-[10px] font-mono text-neutral-400 pt-2 flex items-center justify-center gap-3">

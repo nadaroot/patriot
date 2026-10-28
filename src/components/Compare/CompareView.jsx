@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BeforeAfterSlider } from '../LocationModal/BeforeAfterSlider';
-import { MapPin, Calendar, Clock, BookOpen, Layers } from 'lucide-react';
+import { MapPin, BookOpen, Layers } from 'lucide-react';
 
 export const CompareView = ({ locations, onOpenMapLocation }) => {
   const [selectedId, setSelectedId] = useState(locations[0]?.id || 'nemiga');
@@ -10,17 +10,17 @@ export const CompareView = ({ locations, onOpenMapLocation }) => {
   return (
     <div className="space-y-6 text-neutral-100 max-w-6xl mx-auto">
       {/* Intro Header */}
-      <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-850 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-black/60 backdrop-blur-xl border border-neutral-800/60 shadow-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 mb-1">
             <Layers className="w-3.5 h-3.5 text-neutral-300" />
-            <span>Архивная фотофиксация · Черно-белый оригинал vs Современность</span>
+            <span>Архивная фотофиксация · Ч/Б оригинал vs Современность</span>
           </div>
           <h2 className="font-bold text-2xl text-white tracking-tight">
             Сравнение эпох: Минск в деталях
           </h2>
           <p className="text-xs text-neutral-400 mt-1 max-w-2xl leading-relaxed">
-            Подлинные архивные кадры из фондов БГАКФФД, сопоставленные с современными фотографиями с идентичного ракурса. Двигайте ползунок для анализа городской трансформации.
+            Подлинные архивные кадры из фондов БГАКФФД, сопоставленные с современными снимками с идентичного ракурса.
           </p>
         </div>
 
@@ -29,7 +29,7 @@ export const CompareView = ({ locations, onOpenMapLocation }) => {
           className="px-4 py-2.5 rounded-2xl bg-white hover:bg-neutral-200 text-black text-xs font-bold shadow-md shrink-0 flex items-center justify-center gap-2 transition-all active:scale-95"
         >
           <MapPin className="w-4 h-4" />
-          <span>Смотреть на 3D Карте</span>
+          <span>Смотреть на Карте</span>
         </button>
       </div>
 
@@ -41,10 +41,10 @@ export const CompareView = ({ locations, onOpenMapLocation }) => {
             <button
               key={loc.id}
               onClick={() => setSelectedId(loc.id)}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-2xl border text-xs whitespace-nowrap transition-all shrink-0 ${
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-2xl border text-xs whitespace-nowrap transition-all shrink-0 backdrop-blur-md ${
                 isSelected
-                  ? 'bg-neutral-850 border-neutral-700 text-white font-semibold shadow-md'
-                  : 'bg-neutral-950 border-neutral-850 text-neutral-400 hover:text-white hover:border-neutral-800'
+                  ? 'bg-neutral-850/80 border-neutral-700 text-white font-semibold shadow-md'
+                  : 'bg-black/50 border-neutral-800/60 text-neutral-400 hover:text-white hover:border-neutral-700/60'
               }`}
             >
               <div className="w-6 h-6 rounded-lg overflow-hidden bg-neutral-900 shrink-0 border border-neutral-800">
@@ -62,8 +62,8 @@ export const CompareView = ({ locations, onOpenMapLocation }) => {
 
       {/* Main Interactive Stage */}
       {selectedLoc && (
-        <div className="p-6 rounded-3xl bg-neutral-950 border border-neutral-850 shadow-2xl space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-850 pb-4">
+        <div className="p-6 rounded-3xl bg-black/60 backdrop-blur-xl border border-neutral-800/60 shadow-2xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-neutral-800/60 pb-4">
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 uppercase tracking-wider mb-1">
                 <span>{selectedLoc.district}</span>
@@ -74,7 +74,7 @@ export const CompareView = ({ locations, onOpenMapLocation }) => {
                 {selectedLoc.title}
               </h3>
             </div>
-            <span className="text-xs text-neutral-400">
+            <span className="text-xs text-neutral-400 max-w-md text-right hidden sm:block">
               {selectedLoc.subtitle}
             </span>
           </div>
@@ -90,7 +90,7 @@ export const CompareView = ({ locations, onOpenMapLocation }) => {
           />
 
           {/* Chronicle Fact Card */}
-          <div className="p-5 rounded-2xl bg-neutral-900/80 border border-neutral-800 space-y-2">
+          <div className="p-5 rounded-2xl bg-neutral-900/60 border border-neutral-800/60 space-y-2 backdrop-blur-md">
             <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-neutral-300 font-semibold">
               <BookOpen className="w-4 h-4 text-white" />
               <span>Историко-градостроительная хроника</span>
