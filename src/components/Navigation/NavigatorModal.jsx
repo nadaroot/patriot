@@ -99,7 +99,7 @@ export const NavigatorModal = ({
           isDark ? 'border-neutral-800/50 bg-black/40' : 'border-[#e5dcce] bg-[#f4efe4]/70'
         }`}>
           {[
-            { id: 'map', label: '3D Карта', icon: MapPin },
+            { id: 'map', label: 'Карта', icon: MapPin },
             { id: 'catalog', label: 'Архив мест', icon: History },
             { id: 'compare', label: 'Сравнение эпох', icon: Split },
             { id: 'ai', label: 'Патриот AI', icon: Sparkles },

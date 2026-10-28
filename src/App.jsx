@@ -157,7 +157,7 @@ export function App() {
             «Место помнит: Интерактивный архив исторической памяти Минска»
           </div>
           <p className="max-w-xl mx-auto text-[11px] leading-relaxed">
-            Проект фотофиксации и архитектурного сопоставления утраченного и сохранённого наследия. Подлинные архивные кадры и 3D-картография.
+            Проект фотофиксации и архитектурного сопоставления утраченного и сохранённого наследия. Подлинные архивные кадры и интерактивная картография Беларуси.
           </p>
           <div className="text-[10px] font-mono pt-2 flex items-center justify-center gap-3">
             <a href="https://pomnit.vercel.app" className={`hover:underline ${isDark ? 'text-white' : 'text-[#2c261e] font-semibold'}`}>

@@ -8,7 +8,7 @@ export const MobileBottomNav = ({
 }) => {
   const isDark = theme === 'dark';
   const navItems = [
-    { id: 'map', label: '3D Карта', icon: MapPin },
+    { id: 'map', label: 'Карта', icon: MapPin },
     { id: 'catalog', label: 'Архив', icon: History },
     { id: 'compare', label: 'Сравнение', icon: Split },
     { id: 'ai', label: 'Патриот AI', icon: Sparkles },

@@ -2,17 +2,16 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { 
-  Box, 
-  Compass, 
   ZoomIn, 
   ZoomOut, 
   Crosshair, 
   Split,
   X,
   Layers,
-  MapPin,
-  ArrowRight
+  ArrowRight,
+  Globe
 } from 'lucide-react';
+import { darkVectorStyle, lightVectorStyle, satellite2dStyle } from '../../data/mapStyles';
 
 export const InteractiveMap = ({
   locations = [],
@@ -23,14 +22,18 @@ export const InteractiveMap = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
-  const [is3D, setIs3D] = useState(true); // Real 3D cinematic perspective by default
-  const [mapType, setMapType] = useState('satellite'); // Satellite view by default
-  const [bearing, setBearing] = useState(-18);
+  const [mapType, setMapType] = useState('scheme'); // 'scheme' (Детальная векторная карта Беларуси) | 'satellite'
   const [activeCardLoc, setActiveCardLoc] = useState(null);
 
   const isDark = theme === 'dark';
 
-  // Initialize MapLibre with Google Satellite, 3D Vector Buildings and 3D Terrain
+  // Get current 2D style
+  const getMapStyle = (type, dark) => {
+    if (type === 'satellite') return satellite2dStyle;
+    return dark ? darkVectorStyle : lightVectorStyle;
+  };
+
+  // Initialize clean 2D vector MapLibre
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -41,173 +44,20 @@ export const InteractiveMap = ({
 
     const minskCenter = [27.5615, 53.9045];
 
-    // Keyless, unrestricted Google Satellite + Scheme + OpenFreeMap 3D Vector Buildings
-    const inlineStyle = {
-      version: 8,
-      sources: {
-        'google-satellite': {
-          type: 'raster',
-          tiles: [
-            'https://mt0.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
-            'https://mt1.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
-            'https://mt2.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
-            'https://mt3.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}'
-          ],
-          tileSize: 256,
-          maxzoom: 20,
-          attribution: 'Google Satellite'
-        },
-        'scheme-tiles': {
-          type: 'raster',
-          tiles: [
-            isDark
-              ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-              : 'https://mt1.google.com/vt/lyrs=m&hl=ru&x={x}&y={y}&z={z}'
-          ],
-          tileSize: 256,
-          maxzoom: 20,
-          attribution: isDark ? 'Esri' : 'Google'
-        },
-        'openfreemap-buildings': {
-          type: 'vector',
-          tiles: [
-            'https://tiles.openfreemap.org/planet/20261025_080012_pt/{z}/{x}/{y}.pbf'
-          ],
-          minzoom: 13,
-          maxzoom: 14
-        },
-        'terrain-dem': {
-          type: 'raster-dem',
-          tiles: [
-            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
-          ],
-          encoding: 'terrarium',
-          tileSize: 256,
-          maxzoom: 14
-        }
-      },
-      layers: [
-        {
-          id: 'scheme-layer',
-          type: 'raster',
-          source: 'scheme-tiles',
-          minzoom: 0,
-          maxzoom: 20,
-          layout: {
-            visibility: mapType === 'satellite' ? 'none' : 'visible'
-          }
-        },
-        {
-          id: 'satellite-layer',
-          type: 'raster',
-          source: 'google-satellite',
-          minzoom: 0,
-          maxzoom: 20,
-          layout: {
-            visibility: mapType === 'satellite' ? 'visible' : 'none'
-          }
-        },
-        {
-          id: '3d-city-buildings',
-          type: 'fill-extrusion',
-          source: 'openfreemap-buildings',
-          'source-layer': 'building',
-          minzoom: 13.5,
-          paint: {
-            'fill-extrusion-color': isDark ? '#2e3440' : (mapType === 'satellite' ? '#d8d0c3' : '#c8bfae'),
-            'fill-extrusion-height': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              13.5, 0,
-              14.5, ['coalesce', ['get', 'render_height'], ['*', ['get', 'levels'], 3.2], 12]
-            ],
-            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-            'fill-extrusion-opacity': is3D ? (mapType === 'satellite' ? 0.62 : 0.82) : 0,
-            'fill-extrusion-vertical-gradient': true
-          }
-        }
-      ]
-    };
-
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: inlineStyle,
+      style: getMapStyle(mapType, isDark),
       center: minskCenter,
-      zoom: 14.2,
-      minZoom: 9,
-      maxZoom: 20,
-      pitch: is3D ? 58 : 0,
-      bearing: is3D ? -18 : 0,
-      maxPitch: 75,
+      zoom: 13.5,
+      minZoom: 6,
+      maxZoom: 19,
+      pitch: 0,
+      maxPitch: 0,
+      bearing: 0,
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
       attributionControl: false,
-    });
-
-    map.on('rotate', () => setBearing(Math.round(map.getBearing())));
-
-    map.on('load', () => {
-      // 3D Lighting for depth and realistic building shadows
-      try {
-        map.setLight({
-          anchor: 'viewport',
-          color: '#ffffff',
-          intensity: 0.65,
-          position: [1.5, 90, 80]
-        });
-      } catch (e) {}
-
-      // 3D Terrain elevation
-      if (is3D) {
-        try {
-          map.setTerrain({ source: 'terrain-dem', exaggeration: 1.25 });
-        } catch (e) {}
-      }
-
-      // Create 3D buildings geometries around central Minsk landmarks
-      const buildingFeatures = locations.map((loc) => {
-        const lng = loc.coords[1];
-        const lat = loc.coords[0];
-        const delta = 0.00065;
-        return {
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: [[
-              [lng - delta, lat - delta * 0.7],
-              [lng + delta, lat - delta * 0.7],
-              [lng + delta, lat + delta * 0.7],
-              [lng - delta, lat + delta * 0.7],
-              [lng - delta, lat - delta * 0.7]
-            ]]
-          },
-          properties: {
-            id: loc.id,
-            title: loc.title,
-            height: 30 + Math.floor((loc.id.length * 7) % 35)
-          }
-        };
-      });
-
-      map.addSource('3d-monuments-source', {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: buildingFeatures
-        }
-      });
-
-      map.addLayer({
-        id: '3d-monuments-extrusion',
-        type: 'fill-extrusion',
-        source: '3d-monuments-source',
-        paint: {
-          'fill-extrusion-color': isDark ? '#d97706' : '#b45309',
-          'fill-extrusion-height': ['get', 'height'],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': is3D ? 0.92 : 0.0,
-          'fill-extrusion-vertical-gradient': true
-        }
-      });
     });
 
     mapInstanceRef.current = map;
@@ -216,20 +66,14 @@ export const InteractiveMap = ({
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, [theme]); // Rebuild cleanly on theme change
+  }, []); // Initialize once
 
-  // Switch between scheme and satellite raster layers
+  // Smooth style updates on theme or mapType change
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    if (map.getLayer('scheme-layer') && map.getLayer('satellite-layer')) {
-      map.setLayoutProperty('scheme-layer', 'visibility', mapType === 'satellite' ? 'none' : 'visible');
-      map.setLayoutProperty('satellite-layer', 'visibility', mapType === 'satellite' ? 'visible' : 'none');
-    }
-    if (map.getLayer('3d-city-buildings') && is3D) {
-      map.setPaintProperty('3d-city-buildings', 'fill-extrusion-opacity', mapType === 'satellite' ? 0.62 : 0.82);
-    }
-  }, [mapType, is3D]);
+    map.setStyle(getMapStyle(mapType, isDark));
+  }, [mapType, isDark]);
 
   // Update Markers
   useEffect(() => {
@@ -275,10 +119,10 @@ export const InteractiveMap = ({
             <circle cx="16" cy="16" r="5" fill="${pinCore}"/>
           </svg>
           <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
-            <div class="${isDark ? 'bg-black/85 text-white border-neutral-700/60' : 'bg-[#fbf9f4]/95 text-[#2c261e] border-[#e5dcce] shadow-xl'} text-[11px] font-semibold px-2.5 py-1 rounded-xl shadow-2xl whitespace-nowrap border backdrop-blur-xl">
+            <div class="${isDark ? 'bg-black/90 text-white border-neutral-700/60' : 'bg-[#fbf9f4]/95 text-[#2c261e] border-[#e5dcce] shadow-xl'} text-[11px] font-semibold px-2.5 py-1 rounded-xl shadow-2xl whitespace-nowrap border backdrop-blur-xl">
               ${loc.title}
             </div>
-            <div class="w-1.5 h-1.5 ${isDark ? 'bg-black/85 border-neutral-700/60' : 'bg-[#fbf9f4]/95 border-[#e5dcce]'} border-r border-b rotate-45 -mt-1"></div>
+            <div class="w-1.5 h-1.5 ${isDark ? 'bg-black/90 border-neutral-700/60' : 'bg-[#fbf9f4]/95 border-[#e5dcce]'} border-r border-b rotate-45 -mt-1"></div>
           </div>
         </div>
       `;
@@ -288,8 +132,7 @@ export const InteractiveMap = ({
         map.flyTo({
           center: [loc.coords[1], loc.coords[0]],
           zoom: 16.5,
-          pitch: is3D ? 58 : 0,
-          duration: 800,
+          duration: 700,
           essential: true
         });
       });
@@ -310,50 +153,11 @@ export const InteractiveMap = ({
       map.flyTo({
         center: [selectedLocation.coords[1], selectedLocation.coords[0]],
         zoom: 16.5,
-        pitch: is3D ? 58 : 0,
-        duration: 800,
+        duration: 700,
         essential: true
       });
     }
-  }, [locations, selectedLocation, activeCardLoc, is3D, isDark]);
-
-  // Toggle between 2D Flat Top-down and Real 3D Extruded Buildings + Terrain
-  const toggle3DMode = () => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    
-    if (is3D) {
-      map.easeTo({ pitch: 0, bearing: 0, duration: 700 });
-      setIs3D(false);
-      try {
-        if (map.getLayer('3d-monuments-extrusion')) {
-          map.setPaintProperty('3d-monuments-extrusion', 'fill-extrusion-opacity', 0.0);
-        }
-        if (map.getLayer('3d-city-buildings')) {
-          map.setPaintProperty('3d-city-buildings', 'fill-extrusion-opacity', 0.0);
-        }
-        map.setTerrain(null);
-      } catch (e) {}
-    } else {
-      map.easeTo({ pitch: 58, bearing: -18, duration: 800 });
-      setIs3D(true);
-      try {
-        if (map.getLayer('3d-monuments-extrusion')) {
-          map.setPaintProperty('3d-monuments-extrusion', 'fill-extrusion-opacity', 0.92);
-        }
-        if (map.getLayer('3d-city-buildings')) {
-          map.setPaintProperty('3d-city-buildings', 'fill-extrusion-opacity', mapType === 'satellite' ? 0.62 : 0.82);
-        }
-        map.setTerrain({ source: 'terrain-dem', exaggeration: 1.25 });
-      } catch (e) {}
-    }
-  };
-
-  const resetBearing = () => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    map.easeTo({ bearing: 0, duration: 400 });
-  };
+  }, [locations, selectedLocation, activeCardLoc, isDark]);
 
   const centerMinsk = () => {
     const map = mapInstanceRef.current;
@@ -361,66 +165,48 @@ export const InteractiveMap = ({
     map.flyTo({
       center: [27.5615, 53.9045],
       zoom: 13.5,
-      pitch: is3D ? 58 : 0,
-      bearing: is3D ? -18 : 0,
-      duration: 700
+      duration: 600
+    });
+  };
+
+  const fitBelarus = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    map.fitBounds([
+      [23.1, 51.2], // Southwest (Brest region)
+      [32.8, 56.1]  // Northeast (Vitebsk region)
+    ], {
+      padding: { top: 40, bottom: 40, left: 40, right: 40 },
+      duration: 800
     });
   };
 
   return (
     <div className={`relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden border shadow-2xl transition-colors ${
-      isDark ? 'border-neutral-800/60 bg-black' : 'border-[#e5dcce] bg-[#efe8dc]'
+      isDark ? 'border-neutral-800/60 bg-[#101012]' : 'border-[#e5dcce] bg-[#f8f4f0]'
     }`}>
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
       {/* Sleek Horizontal Control Capsule */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl border shadow-xl backdrop-blur-xl transition-all">
         <div className={`flex items-center gap-1 p-0.5 rounded-xl ${
-          isDark ? 'bg-black/65 border border-neutral-800/80 text-white' : 'bg-[#fbf9f4]/90 border border-[#e5dcce] text-[#2c261e] shadow-sm'
+          isDark ? 'bg-black/75 border border-neutral-800/80 text-white' : 'bg-[#fbf9f4]/95 border border-[#e5dcce] text-[#2c261e] shadow-sm'
         }`}>
-          {/* Toggle Real 3D / 2D */}
-          <button
-            onClick={toggle3DMode}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              is3D 
-                ? isDark ? 'bg-white text-black shadow-xs' : 'bg-[#2c261e] text-[#fbf9f4] shadow-xs'
-                : isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
-            }`}
-            title={is3D ? 'Включён режим 3D. Нажмите для 2D' : 'Включить режим 3D зданий'}
-          >
-            <Box className="w-3.5 h-3.5" />
-            <span>{is3D ? '3D' : '2D'}</span>
-          </button>
-
-          {/* Toggle Satellite / Scheme */}
+          {/* Toggle Map Mode: Detailed Vector Map / Satellite */}
           <button
             onClick={() => setMapType(mapType === 'satellite' ? 'scheme' : 'satellite')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              mapType === 'satellite'
+              mapType === 'scheme'
                 ? isDark ? 'bg-white text-black shadow-xs' : 'bg-[#2c261e] text-[#fbf9f4] shadow-xs'
                 : isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
-            title="Переключить спутниковый снимок / схему"
+            title="Переключить: Детальная карта Беларуси / Спутник"
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>{mapType === 'satellite' ? 'Спутник' : 'Схема'}</span>
+            <span>{mapType === 'scheme' ? 'Карта Беларуси' : 'Спутник'}</span>
           </button>
 
           <div className={`h-4 w-px mx-0.5 ${isDark ? 'bg-neutral-800' : 'bg-[#e5dcce]'}`} />
-
-          {/* Compass */}
-          <button
-            onClick={resetBearing}
-            className={`p-1.5 rounded-lg transition-colors ${
-              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
-            }`}
-            title={`Компас (поворот ${bearing}°)`}
-          >
-            <Compass 
-              className="w-4 h-4 transition-transform duration-200" 
-              style={{ transform: `rotate(${-bearing}deg)` }}
-            />
-          </button>
 
           {/* Zoom In */}
           <button
@@ -444,25 +230,40 @@ export const InteractiveMap = ({
             <ZoomOut className="w-4 h-4" />
           </button>
 
+          <div className={`h-4 w-px mx-0.5 ${isDark ? 'bg-neutral-800' : 'bg-[#e5dcce]'}`} />
+
           {/* Center Minsk */}
           <button
             onClick={centerMinsk}
-            className={`p-1.5 rounded-lg transition-colors ${
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
               isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
             }`}
             title="Центр Минска"
           >
-            <Crosshair className="w-4 h-4" />
+            <Crosshair className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Минск</span>
+          </button>
+
+          {/* Fit all Belarus */}
+          <button
+            onClick={fitBelarus}
+            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
+            }`}
+            title="Показать всю Беларусь"
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Беларусь</span>
           </button>
         </div>
       </div>
 
-      {/* Frosted Glass Floating Card for Selected Location */}
+      {/* Floating Card for Selected Location */}
       {activeCardLoc && (
         <div className="absolute bottom-4 left-4 right-4 sm:left-6 sm:max-w-md z-30 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className={`p-4 rounded-3xl border shadow-2xl backdrop-blur-2xl transition-all ${
             isDark 
-              ? 'bg-black/75 border-neutral-700/60 text-white' 
+              ? 'bg-black/85 border-neutral-700/60 text-white' 
               : 'bg-[#fbf9f4]/95 border-[#e5dcce] text-[#2c261e] shadow-xl'
           }`}>
             <div className="flex items-start justify-between gap-3">
