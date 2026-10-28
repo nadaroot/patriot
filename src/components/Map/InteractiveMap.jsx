@@ -23,18 +23,17 @@ export const InteractiveMap = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
-  const [is3D, setIs3D] = useState(false); // Clean flat 2D top-down view by default
-  const [mapType, setMapType] = useState('scheme'); // 'scheme' | 'satellite'
-  const [bearing, setBearing] = useState(0);
+  const [is3D, setIs3D] = useState(true); // Real 3D cinematic perspective by default
+  const [mapType, setMapType] = useState('satellite'); // Satellite view by default
+  const [bearing, setBearing] = useState(-18);
   const [activeCardLoc, setActiveCardLoc] = useState(null);
 
   const isDark = theme === 'dark';
 
-  // Initialize MapLibre with 100% reliable inline styles (never goes blank)
+  // Initialize MapLibre with Google Satellite, 3D Vector Buildings and 3D Terrain
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // Remove old map instance if re-initializing
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove();
       mapInstanceRef.current = null;
@@ -42,34 +41,56 @@ export const InteractiveMap = ({
 
     const minskCenter = [27.5615, 53.9045];
 
-    // Build solid inline style using 100% reliable, keyless Esri raster tiles
+    // Keyless, unrestricted Google Satellite + Scheme + OpenFreeMap 3D Vector Buildings
     const inlineStyle = {
       version: 8,
       sources: {
-        'esri-scheme': {
+        'google-satellite': {
+          type: 'raster',
+          tiles: [
+            'https://mt0.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
+            'https://mt1.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
+            'https://mt2.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
+            'https://mt3.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}'
+          ],
+          tileSize: 256,
+          maxzoom: 20,
+          attribution: 'Google Satellite'
+        },
+        'scheme-tiles': {
           type: 'raster',
           tiles: [
             isDark
               ? 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'
-              : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'
+              : 'https://mt1.google.com/vt/lyrs=m&hl=ru&x={x}&y={y}&z={z}'
           ],
           tileSize: 256,
-          attribution: 'Esri'
+          maxzoom: 20,
+          attribution: isDark ? 'Esri' : 'Google'
         },
-        'esri-satellite': {
-          type: 'raster',
+        'openfreemap-buildings': {
+          type: 'vector',
           tiles: [
-            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            'https://tiles.openfreemap.org/planet/20261025_080012_pt/{z}/{x}/{y}.pbf'
           ],
+          minzoom: 13,
+          maxzoom: 14
+        },
+        'terrain-dem': {
+          type: 'raster-dem',
+          tiles: [
+            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+          ],
+          encoding: 'terrarium',
           tileSize: 256,
-          attribution: 'Esri World Imagery'
+          maxzoom: 14
         }
       },
       layers: [
         {
           id: 'scheme-layer',
           type: 'raster',
-          source: 'esri-scheme',
+          source: 'scheme-tiles',
           minzoom: 0,
           maxzoom: 20,
           layout: {
@@ -79,11 +100,31 @@ export const InteractiveMap = ({
         {
           id: 'satellite-layer',
           type: 'raster',
-          source: 'esri-satellite',
+          source: 'google-satellite',
           minzoom: 0,
           maxzoom: 20,
           layout: {
             visibility: mapType === 'satellite' ? 'visible' : 'none'
+          }
+        },
+        {
+          id: '3d-city-buildings',
+          type: 'fill-extrusion',
+          source: 'openfreemap-buildings',
+          'source-layer': 'building',
+          minzoom: 13.5,
+          paint: {
+            'fill-extrusion-color': isDark ? '#2e3440' : (mapType === 'satellite' ? '#d8d0c3' : '#c8bfae'),
+            'fill-extrusion-height': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              13.5, 0,
+              14.5, ['coalesce', ['get', 'render_height'], ['*', ['get', 'levels'], 3.2], 12]
+            ],
+            'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+            'fill-extrusion-opacity': is3D ? (mapType === 'satellite' ? 0.62 : 0.82) : 0,
+            'fill-extrusion-vertical-gradient': true
           }
         }
       ]
@@ -93,9 +134,9 @@ export const InteractiveMap = ({
       container: mapContainerRef.current,
       style: inlineStyle,
       center: minskCenter,
-      zoom: 13.5,
-      minZoom: 10,
-      maxZoom: 19,
+      zoom: 14.2,
+      minZoom: 9,
+      maxZoom: 20,
       pitch: is3D ? 58 : 0,
       bearing: is3D ? -18 : 0,
       maxPitch: 75,
@@ -105,11 +146,28 @@ export const InteractiveMap = ({
     map.on('rotate', () => setBearing(Math.round(map.getBearing())));
 
     map.on('load', () => {
+      // 3D Lighting for depth and realistic building shadows
+      try {
+        map.setLight({
+          anchor: 'viewport',
+          color: '#ffffff',
+          intensity: 0.65,
+          position: [1.5, 90, 80]
+        });
+      } catch (e) {}
+
+      // 3D Terrain elevation
+      if (is3D) {
+        try {
+          map.setTerrain({ source: 'terrain-dem', exaggeration: 1.25 });
+        } catch (e) {}
+      }
+
       // Create 3D buildings geometries around central Minsk landmarks
       const buildingFeatures = locations.map((loc) => {
         const lng = loc.coords[1];
         const lat = loc.coords[0];
-        const delta = 0.0006;
+        const delta = 0.00065;
         return {
           type: 'Feature',
           geometry: {
@@ -125,7 +183,7 @@ export const InteractiveMap = ({
           properties: {
             id: loc.id,
             title: loc.title,
-            height: 25 + Math.floor((loc.id.length * 7) % 35)
+            height: 30 + Math.floor((loc.id.length * 7) % 35)
           }
         };
       });
@@ -143,10 +201,10 @@ export const InteractiveMap = ({
         type: 'fill-extrusion',
         source: '3d-monuments-source',
         paint: {
-          'fill-extrusion-color': isDark ? '#52525b' : '#a89d89',
+          'fill-extrusion-color': isDark ? '#d97706' : '#b45309',
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': is3D ? 0.85 : 0.0,
+          'fill-extrusion-opacity': is3D ? 0.92 : 0.0,
           'fill-extrusion-vertical-gradient': true
         }
       });
@@ -168,7 +226,10 @@ export const InteractiveMap = ({
       map.setLayoutProperty('scheme-layer', 'visibility', mapType === 'satellite' ? 'none' : 'visible');
       map.setLayoutProperty('satellite-layer', 'visibility', mapType === 'satellite' ? 'visible' : 'none');
     }
-  }, [mapType]);
+    if (map.getLayer('3d-city-buildings') && is3D) {
+      map.setPaintProperty('3d-city-buildings', 'fill-extrusion-opacity', mapType === 'satellite' ? 0.62 : 0.82);
+    }
+  }, [mapType, is3D]);
 
   // Update Markers
   useEffect(() => {
@@ -226,7 +287,7 @@ export const InteractiveMap = ({
         setActiveCardLoc(loc);
         map.flyTo({
           center: [loc.coords[1], loc.coords[0]],
-          zoom: 16.2,
+          zoom: 16.5,
           pitch: is3D ? 58 : 0,
           duration: 800,
           essential: true
@@ -248,7 +309,7 @@ export const InteractiveMap = ({
       setActiveCardLoc(selectedLocation);
       map.flyTo({
         center: [selectedLocation.coords[1], selectedLocation.coords[0]],
-        zoom: 16.2,
+        zoom: 16.5,
         pitch: is3D ? 58 : 0,
         duration: 800,
         essential: true
@@ -256,7 +317,7 @@ export const InteractiveMap = ({
     }
   }, [locations, selectedLocation, activeCardLoc, is3D, isDark]);
 
-  // Toggle between 2D Flat Top-down and Real 3D Extruded Buildings
+  // Toggle between 2D Flat Top-down and Real 3D Extruded Buildings + Terrain
   const toggle3DMode = () => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -268,14 +329,22 @@ export const InteractiveMap = ({
         if (map.getLayer('3d-monuments-extrusion')) {
           map.setPaintProperty('3d-monuments-extrusion', 'fill-extrusion-opacity', 0.0);
         }
+        if (map.getLayer('3d-city-buildings')) {
+          map.setPaintProperty('3d-city-buildings', 'fill-extrusion-opacity', 0.0);
+        }
+        map.setTerrain(null);
       } catch (e) {}
     } else {
       map.easeTo({ pitch: 58, bearing: -18, duration: 800 });
       setIs3D(true);
       try {
         if (map.getLayer('3d-monuments-extrusion')) {
-          map.setPaintProperty('3d-monuments-extrusion', 'fill-extrusion-opacity', 0.88);
+          map.setPaintProperty('3d-monuments-extrusion', 'fill-extrusion-opacity', 0.92);
         }
+        if (map.getLayer('3d-city-buildings')) {
+          map.setPaintProperty('3d-city-buildings', 'fill-extrusion-opacity', mapType === 'satellite' ? 0.62 : 0.82);
+        }
+        map.setTerrain({ source: 'terrain-dem', exaggeration: 1.25 });
       } catch (e) {}
     }
   };
