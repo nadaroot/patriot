@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Header } from './components/Header';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav';
 import { InteractiveMap } from './components/Map/InteractiveMap';
@@ -7,13 +7,44 @@ import { LocationDetail } from './components/LocationModal/LocationDetail';
 import { AiEthicsDemo } from './components/AiEthics/AiEthicsDemo';
 import { CatalogView } from './components/Catalog/CatalogView';
 import { CompareView } from './components/Compare/CompareView';
+import { NavigatorModal } from './components/Navigation/NavigatorModal';
 import { Toast } from './components/Common/Toast';
 import { INITIAL_LOCATIONS } from './data/locations';
+
+const THEME_STORAGE_KEY = 'mesto_pomnit_theme_v2';
 
 export function App() {
   const [activeTab, setActiveTab] = useState('map'); // 'map' | 'catalog' | 'compare' | 'ai'
   const [locations] = useState(INITIAL_LOCATIONS);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
+
+  // Theme Support: Dark / Light
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY);
+      if (saved === 'light' || saved === 'dark') return saved;
+    } catch {}
+    return 'dark'; // Default to sleek OLED black
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,13 +78,22 @@ export function App() {
     setSelectedLocation(loc);
   };
 
+  const isDark = theme === 'dark';
+
   return (
-    <div className="min-h-screen bg-black flex flex-col font-sans text-neutral-100 selection:bg-neutral-800 selection:text-white pb-16 md:pb-0">
+    <div className={`min-h-screen flex flex-col font-sans transition-colors duration-300 pb-16 md:pb-0 ${
+      isDark 
+        ? 'bg-black text-neutral-100 selection:bg-neutral-800 selection:text-white' 
+        : 'bg-neutral-50 text-neutral-900 selection:bg-neutral-200 selection:text-black'
+    }`}>
       
-      {/* Translucent Header */}
+      {/* Translucent Header with Theme Switcher & Navigator */}
       <Header
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onOpenNavigator={() => setIsNavigatorOpen(true)}
       />
 
       {/* Main Container */}
@@ -74,6 +114,7 @@ export function App() {
                 locations={filteredLocations}
                 selectedLocation={selectedLocation}
                 onSelectLocation={(loc) => setSelectedLocation(loc)}
+                theme={theme}
               />
             </div>
           </div>
@@ -96,25 +137,29 @@ export function App() {
           />
         )}
 
-        {/* TAB 4: PATRIOT AI ASSISTANT */}
+        {/* TAB 4: AI RESEARCHER WITH PERSISTENT CHATS */}
         {activeTab === 'ai' && (
           <AiEthicsDemo />
         )}
       </main>
 
       {/* Translucent Footer */}
-      <footer className="border-t border-neutral-800/60 bg-black/60 backdrop-blur-xl py-6 sm:py-8 px-4 text-center text-xs text-neutral-400 mb-16 md:mb-0">
+      <footer className={`border-t py-6 sm:py-8 px-4 text-center text-xs backdrop-blur-xl mb-16 md:mb-0 transition-colors ${
+        isDark 
+          ? 'border-neutral-800/60 bg-black/60 text-neutral-400' 
+          : 'border-neutral-200 bg-white/70 text-neutral-500'
+      }`}>
         <div className="max-w-4xl mx-auto space-y-2">
-          <div className="font-semibold text-sm text-white">
+          <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-neutral-900'}`}>
             «Место помнит: Интерактивный архив исторической памяти Минска»
           </div>
-          <p className="max-w-xl mx-auto text-neutral-400 text-[11px] leading-relaxed">
+          <p className="max-w-xl mx-auto text-[11px] leading-relaxed">
             Проект фотофиксации и архитектурного сопоставления утраченного и сохранённого наследия. Подлинные архивные кадры и 3D-картография.
           </p>
-          <div className="text-[10px] font-mono text-neutral-400 pt-2 flex items-center justify-center gap-3">
-            <span>Патриот AI Core</span>
-            <span>•</span>
-            <a href="https://pomnit.vercel.app" className="text-white hover:underline">pomnit.vercel.app</a>
+          <div className="text-[10px] font-mono pt-2 flex items-center justify-center gap-3">
+            <a href="https://pomnit.vercel.app" className={`hover:underline ${isDark ? 'text-white' : 'text-neutral-900 font-semibold'}`}>
+              pomnit.vercel.app
+            </a>
           </div>
         </div>
       </footer>
@@ -123,6 +168,18 @@ export function App() {
       <MobileBottomNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
+      />
+
+      {/* Full Navigator Modal (Opened from Header) */}
+      <NavigatorModal
+        isOpen={isNavigatorOpen}
+        onClose={() => setIsNavigatorOpen(false)}
+        locations={locations}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        onSelectLocation={(loc) => {
+          setSelectedLocation(loc);
+        }}
       />
 
       {/* Location Modal */}
