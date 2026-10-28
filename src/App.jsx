@@ -107,6 +107,7 @@ export function App() {
               onSearchChange={setSearchQuery}
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
+              theme={theme}
             />
 
             <div className="h-[calc(100vh-235px)] min-h-[480px] sm:h-[660px] w-full">
@@ -126,6 +127,7 @@ export function App() {
             locations={filteredLocations}
             onSelectLocation={(loc) => setSelectedLocation(loc)}
             onOpenMapLocation={handleOpenMapWithLocation}
+            theme={theme}
           />
         )}
 
@@ -134,12 +136,13 @@ export function App() {
           <CompareView
             locations={filteredLocations.length > 0 ? filteredLocations : locations}
             onOpenMapLocation={handleOpenMapWithLocation}
+            theme={theme}
           />
         )}
 
         {/* TAB 4: AI RESEARCHER WITH PERSISTENT CHATS */}
         {activeTab === 'ai' && (
-          <AiEthicsDemo />
+          <AiEthicsDemo theme={theme} />
         )}
       </main>
 
@@ -168,6 +171,7 @@ export function App() {
       <MobileBottomNav
         activeTab={activeTab}
         onTabChange={setActiveTab}
+        theme={theme}
       />
 
       {/* Full Navigator Modal (Opened from Header) */}
@@ -180,6 +184,7 @@ export function App() {
         onSelectLocation={(loc) => {
           setSelectedLocation(loc);
         }}
+        theme={theme}
       />
 
       {/* Location Modal */}
@@ -187,6 +192,7 @@ export function App() {
         <LocationDetail
           location={selectedLocation}
           onClose={() => setSelectedLocation(null)}
+          theme={theme}
         />
       )}
 

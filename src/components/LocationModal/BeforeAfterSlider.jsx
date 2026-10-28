@@ -8,10 +8,12 @@ export const BeforeAfterSlider = ({
   modernYear = '2026 г.',
   archiveCaption,
   modernCaption,
+  theme = 'dark',
 }) => {
   const [sliderPos, setSliderPos] = useState(50);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const isDark = theme === 'dark';
 
   const handleMove = useCallback((clientX) => {
     if (!containerRef.current) return;
@@ -52,7 +54,9 @@ export const BeforeAfterSlider = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onTouchMove={handleTouchMove}
-        className="slider-container relative w-full h-[340px] sm:h-[480px] rounded-3xl overflow-hidden cursor-ew-resize select-none border border-neutral-800/70 shadow-2xl bg-black"
+        className={`slider-container relative w-full h-[340px] sm:h-[480px] rounded-3xl overflow-hidden cursor-ew-resize select-none border shadow-2xl bg-black ${
+          isDark ? 'border-neutral-800/70' : 'border-neutral-300'
+        }`}
       >
         {/* Background Image: Modern Color */}
         <img
@@ -100,13 +104,25 @@ export const BeforeAfterSlider = ({
       </div>
 
       {/* Captions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-neutral-400 pt-1">
-        <div className="p-3.5 rounded-2xl bg-black/50 backdrop-blur-xl border border-neutral-800/60">
-          <span className="font-semibold text-neutral-200 block mb-1">Слева (Архивный кадр):</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+        <div className={`p-3.5 rounded-2xl border backdrop-blur-xl transition-colors ${
+          isDark 
+            ? 'bg-neutral-900/60 border-neutral-800/60 text-neutral-400' 
+            : 'bg-white border-neutral-200 text-neutral-600 shadow-2xs'
+        }`}>
+          <span className={`font-semibold block mb-1 ${isDark ? 'text-neutral-200' : 'text-neutral-900'}`}>
+            Слева (Архивный кадр):
+          </span>
           <p className="leading-relaxed">{archiveCaption || 'Исторический снимок из фондов БГАКФФД.'}</p>
         </div>
-        <div className="p-3.5 rounded-2xl bg-black/50 backdrop-blur-xl border border-neutral-800/60">
-          <span className="font-semibold text-neutral-200 block mb-1">Справа (Современный вид):</span>
+        <div className={`p-3.5 rounded-2xl border backdrop-blur-xl transition-colors ${
+          isDark 
+            ? 'bg-neutral-900/60 border-neutral-800/60 text-neutral-400' 
+            : 'bg-white border-neutral-200 text-neutral-600 shadow-2xs'
+        }`}>
+          <span className={`font-semibold block mb-1 ${isDark ? 'text-neutral-200' : 'text-neutral-900'}`}>
+            Справа (Современный вид):
+          </span>
           <p className="leading-relaxed">{modernCaption || 'Современное состояние локации в городской среде.'}</p>
         </div>
       </div>
