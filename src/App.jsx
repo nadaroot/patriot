@@ -154,7 +154,7 @@ export function App() {
       }`}>
         <div className="max-w-4xl mx-auto space-y-2">
           <div className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-[#2c261e]'}`}>
-            «Место помнит: Интерактивный архив исторической памяти Минска»
+            «Место помнит: Интерактивный архив исторической памяти Беларуси»
           </div>
           <p className="max-w-xl mx-auto text-[11px] leading-relaxed">
             Проект фотофиксации и архитектурного сопоставления утраченного и сохранённого наследия. Подлинные архивные кадры и интерактивная картография Беларуси.

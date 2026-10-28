@@ -5,13 +5,12 @@ import {
   ZoomIn, 
   ZoomOut, 
   Crosshair, 
-  Split,
-  X,
-  Layers,
-  ArrowRight,
-  Globe
+  Split, 
+  X, 
+  ArrowRight, 
+  Globe 
 } from 'lucide-react';
-import { darkVectorStyle, lightVectorStyle, satellite2dStyle } from '../../data/mapStyles';
+import { BELARUS_BORDER, BELARUS_MASK, BELARUS_BOUNDS, BELARUS_CENTER } from '../../data/belarusBorder';
 
 export const InteractiveMap = ({
   locations = [],
@@ -22,18 +21,96 @@ export const InteractiveMap = ({
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
-  const [mapType, setMapType] = useState('scheme'); // 'scheme' (Детальная векторная карта Беларуси) | 'satellite'
   const [activeCardLoc, setActiveCardLoc] = useState(null);
 
   const isDark = theme === 'dark';
 
-  // Get current 2D style
-  const getMapStyle = (type, dark) => {
-    if (type === 'satellite') return satellite2dStyle;
-    return dark ? darkVectorStyle : lightVectorStyle;
+  // Build optimized Satellite-only map style for Belarus
+  const buildSatelliteStyle = () => {
+    return {
+      version: 8,
+      sources: {
+        'satellite-tiles': {
+          type: 'raster',
+          tiles: [
+            'https://mt0.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
+            'https://mt1.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
+            'https://mt2.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}',
+            'https://mt3.google.com/vt/lyrs=y&hl=ru&x={x}&y={y}&z={z}'
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+          bounds: [22.85, 51.05, 33.15, 56.40],
+          attribution: 'Google Satellite'
+        },
+        'belarus-mask': {
+          type: 'geojson',
+          data: BELARUS_MASK
+        },
+        'belarus-border': {
+          type: 'geojson',
+          data: BELARUS_BORDER
+        }
+      },
+      layers: [
+        // 1. High-Res Satellite Imagery (Restricted to Belarus)
+        {
+          id: 'satellite-base',
+          type: 'raster',
+          source: 'satellite-tiles',
+          minzoom: 0,
+          maxzoom: 20
+        },
+        // 2. Vignette/Mask outside Belarus territory
+        {
+          id: 'belarus-mask-layer',
+          type: 'fill',
+          source: 'belarus-mask',
+          paint: {
+            'fill-color': '#05070a',
+            'fill-opacity': isDark ? 0.65 : 0.45
+          }
+        },
+        // 3. Glowing Outer Red Border
+        {
+          id: 'belarus-border-glow',
+          type: 'line',
+          source: 'belarus-border',
+          paint: {
+            'line-color': '#ef4444',
+            'line-width': 6,
+            'line-blur': 4,
+            'line-opacity': 0.65
+          }
+        },
+        // 4. Crisp Inner State Border
+        {
+          id: 'belarus-border-main',
+          type: 'line',
+          source: 'belarus-border',
+          paint: {
+            'line-color': '#dc2626',
+            'line-width': 2.2,
+            'line-opacity': 0.95
+          }
+        },
+        // 5. Delicate White/Red Dashed Accent Line
+        {
+          id: 'belarus-border-dash',
+          type: 'line',
+          source: 'belarus-border',
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 1.2,
+            'line-dasharray': [3, 4],
+            'line-opacity': 0.75
+          }
+        }
+      ]
+    };
   };
 
-  // Initialize clean 2D vector MapLibre
+  // Initialize MapLibre
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
@@ -42,15 +119,14 @@ export const InteractiveMap = ({
       mapInstanceRef.current = null;
     }
 
-    const minskCenter = [27.5615, 53.9045];
-
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: getMapStyle(mapType, isDark),
-      center: minskCenter,
-      zoom: 13.5,
-      minZoom: 6,
+      style: buildSatelliteStyle(),
+      center: BELARUS_CENTER, // Geometric center of Belarus [27.95, 53.70]
+      zoom: 7.2,
+      minZoom: 6.5,
       maxZoom: 19,
+      maxBounds: BELARUS_BOUNDS, // Strictly limited to Belarus + ~10km border buffer
       pitch: 0,
       maxPitch: 0,
       bearing: 0,
@@ -66,14 +142,18 @@ export const InteractiveMap = ({
       map.remove();
       mapInstanceRef.current = null;
     };
-  }, []); // Initialize once
+  }, []); // Init once
 
-  // Smooth style updates on theme or mapType change
+  // Update theme mask on theme change
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
-    map.setStyle(getMapStyle(mapType, isDark));
-  }, [mapType, isDark]);
+    try {
+      if (map.getLayer('belarus-mask-layer')) {
+        map.setPaintProperty('belarus-mask-layer', 'fill-opacity', isDark ? 0.65 : 0.45);
+      }
+    } catch (e) {}
+  }, [isDark]);
 
   // Update Markers
   useEffect(() => {
@@ -101,16 +181,16 @@ export const InteractiveMap = ({
         : (isDark ? '#18181b' : '#2c261e');
 
       const pinStroke = isSelected
-        ? (isDark ? '#000000' : '#fef3c7')
+        ? (isDark ? '#dc2626' : '#fef3c7')
         : (isDark ? '#ffffff' : '#f8f5ee');
 
       const pinCore = isSelected
-        ? (isDark ? '#000000' : '#ffffff')
+        ? (isDark ? '#dc2626' : '#ffffff')
         : (isDark ? '#ffffff' : '#f8f5ee');
 
       el.innerHTML = `
         <div class="relative w-full h-full flex items-center justify-center pointer-events-auto">
-          <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:scale-115 transition-transform duration-200" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.38));">
+          <svg width="32" height="42" viewBox="0 0 32 42" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-hover:scale-115 transition-transform duration-200" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.5));">
             <path d="M16 1C7.716 1 1 7.716 1 16C1 26.5 16 41 16 41C16 41 31 26.5 31 16C31 7.716 24.284 1 16 1Z" 
                   fill="${pinFill}" 
                   stroke="${pinStroke}" 
@@ -131,7 +211,7 @@ export const InteractiveMap = ({
         setActiveCardLoc(loc);
         map.flyTo({
           center: [loc.coords[1], loc.coords[0]],
-          zoom: 16.5,
+          zoom: 15.5,
           duration: 700,
           essential: true
         });
@@ -152,12 +232,22 @@ export const InteractiveMap = ({
       setActiveCardLoc(selectedLocation);
       map.flyTo({
         center: [selectedLocation.coords[1], selectedLocation.coords[0]],
-        zoom: 16.5,
+        zoom: 15.5,
         duration: 700,
         essential: true
       });
     }
   }, [locations, selectedLocation, activeCardLoc, isDark]);
+
+  const fitAllBelarus = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    map.flyTo({
+      center: BELARUS_CENTER,
+      zoom: 7.2,
+      duration: 800
+    });
+  };
 
   const centerMinsk = () => {
     const map = mapInstanceRef.current;
@@ -165,25 +255,13 @@ export const InteractiveMap = ({
     map.flyTo({
       center: [27.5615, 53.9045],
       zoom: 13.5,
-      duration: 600
-    });
-  };
-
-  const fitBelarus = () => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-    map.fitBounds([
-      [23.1, 51.2], // Southwest (Brest region)
-      [32.8, 56.1]  // Northeast (Vitebsk region)
-    ], {
-      padding: { top: 40, bottom: 40, left: 40, right: 40 },
-      duration: 800
+      duration: 700
     });
   };
 
   return (
     <div className={`relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden border shadow-2xl transition-colors ${
-      isDark ? 'border-neutral-800/60 bg-[#101012]' : 'border-[#e5dcce] bg-[#f8f4f0]'
+      isDark ? 'border-neutral-800/60 bg-[#07090d]' : 'border-[#e5dcce] bg-[#efe8dc]'
     }`}>
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
@@ -192,18 +270,30 @@ export const InteractiveMap = ({
         <div className={`flex items-center gap-1 p-0.5 rounded-xl ${
           isDark ? 'bg-black/75 border border-neutral-800/80 text-white' : 'bg-[#fbf9f4]/95 border border-[#e5dcce] text-[#2c261e] shadow-sm'
         }`}>
-          {/* Toggle Map Mode: Detailed Vector Map / Satellite */}
+          {/* Fit all Belarus */}
           <button
-            onClick={() => setMapType(mapType === 'satellite' ? 'scheme' : 'satellite')}
+            onClick={fitAllBelarus}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              mapType === 'scheme'
-                ? isDark ? 'bg-white text-black shadow-xs' : 'bg-[#2c261e] text-[#fbf9f4] shadow-xs'
-                : isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
+              isDark ? 'bg-white text-black shadow-xs' : 'bg-[#2c261e] text-[#fbf9f4] shadow-xs'
             }`}
-            title="Переключить: Детальная карта Беларуси / Спутник"
+            title="Охватить всю Беларусь"
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>{mapType === 'scheme' ? 'Карта Беларуси' : 'Спутник'}</span>
+            <Globe className="w-3.5 h-3.5 text-red-500" />
+            <span>Вся Беларусь</span>
+          </button>
+
+          <div className={`h-4 w-px mx-0.5 ${isDark ? 'bg-neutral-800' : 'bg-[#e5dcce]'}`} />
+
+          {/* Center Minsk */}
+          <button
+            onClick={centerMinsk}
+            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
+            }`}
+            title="Центр Минска"
+          >
+            <Crosshair className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Минск</span>
           </button>
 
           <div className={`h-4 w-px mx-0.5 ${isDark ? 'bg-neutral-800' : 'bg-[#e5dcce]'}`} />
@@ -229,32 +319,6 @@ export const InteractiveMap = ({
           >
             <ZoomOut className="w-4 h-4" />
           </button>
-
-          <div className={`h-4 w-px mx-0.5 ${isDark ? 'bg-neutral-800' : 'bg-[#e5dcce]'}`} />
-
-          {/* Center Minsk */}
-          <button
-            onClick={centerMinsk}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
-            }`}
-            title="Центр Минска"
-          >
-            <Crosshair className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Минск</span>
-          </button>
-
-          {/* Fit all Belarus */}
-          <button
-            onClick={fitBelarus}
-            className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-              isDark ? 'text-neutral-300 hover:text-white hover:bg-neutral-800/50' : 'text-[#635747] hover:text-[#1a1612] hover:bg-[#efe8dc]'
-            }`}
-            title="Показать всю Беларусь"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Беларусь</span>
-          </button>
         </div>
       </div>
 
@@ -279,7 +343,7 @@ export const InteractiveMap = ({
                   <div className={`flex items-center gap-2 text-[10px] font-mono mb-0.5 ${
                     isDark ? 'text-neutral-400' : 'text-[#8a7a66]'
                   }`}>
-                    <span className="font-semibold">{activeCardLoc.district}</span>
+                    <span className="font-semibold text-red-500">{activeCardLoc.district}</span>
                     <span>•</span>
                     <span>{activeCardLoc.archiveYear}</span>
                   </div>

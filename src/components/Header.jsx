@@ -21,7 +21,7 @@ export const Header = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { id: 'map', label: 'Карта Минска', icon: MapPin },
+    { id: 'map', label: 'Карта Беларуси', icon: MapPin },
     { id: 'catalog', label: 'Архив мест', icon: History },
     { id: 'compare', label: 'Сравнение эпох', icon: Split },
     { id: 'ai', label: 'ИИ-исследователь', icon: Sparkles },
