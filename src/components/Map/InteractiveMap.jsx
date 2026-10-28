@@ -1,240 +1,255 @@
 import React, { useEffect, useRef, useState } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { MapPin, Compass, Volume2, Split, Layers, Globe, Radio } from 'lucide-react';
+import * as maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { 
+  Box, 
+  Compass, 
+  RotateCw, 
+  ZoomIn, 
+  ZoomOut, 
+  Crosshair, 
+  MapPin, 
+  ArrowUpRight,
+  Split,
+  Calendar
+} from 'lucide-react';
 
 export const InteractiveMap = ({
   locations = [],
   selectedLocation,
   onSelectLocation,
-  isPickingLocation = false,
-  onCoordinatePicked,
 }) => {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
-  const markersLayerRef = useRef(null);
-  const currentTileLayerRef = useRef(null);
-  const [mapMode, setMapMode] = useState('dark'); // 'dark' | 'satellite'
+  const markersRef = useRef([]);
+  const [is3D, setIs3D] = useState(true);
+  const [bearing, setBearing] = useState(-20);
+  const [pitch, setPitch] = useState(55);
 
-  // Map tile layers without any API tokens needed:
-  const TILE_LAYERS = {
-    dark: {
-      url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-      options: {
-        attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> · Место помнит',
-        subdomains: 'abcd',
-        maxZoom: 19,
-      }
-    },
-    satellite: {
-      url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-      options: {
-        attribution: '&copy; <a href="https://www.esri.com/">Esri</a> Satellite High-Resolution · Место помнит',
-        maxZoom: 19,
-      }
-    }
-  };
-
-  // Switch tile layer when mapMode changes
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    if (currentTileLayerRef.current) {
-      map.removeLayer(currentTileLayerRef.current);
-    }
-
-    const cfg = TILE_LAYERS[mapMode] || TILE_LAYERS.dark;
-    const newLayer = L.tileLayer(cfg.url, cfg.options).addTo(map);
-    currentTileLayerRef.current = newLayer;
-  }, [mapMode]);
-
-  // Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
+    if (mapInstanceRef.current) return;
 
-    if (!mapInstanceRef.current) {
-      // Center of Minsk: Oktyabrskaya / Nemiga
-      const minskCenter = [53.9045, 27.5615];
-      const map = L.map(mapContainerRef.current, {
-        center: minskCenter,
-        zoom: 13,
-        minZoom: 11,
-        maxZoom: 18,
-        zoomControl: false,
-      });
+    // Center of Minsk: [lng, lat]
+    const minskCenter = [27.5615, 53.9045];
 
-      L.control.zoom({ position: 'bottomright' }).addTo(map);
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: {
+        version: 8,
+        sources: {
+          'satellite-tiles': {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+            ],
+            tileSize: 256,
+            attribution: 'Esri World Imagery 3D'
+          }
+        },
+        layers: [
+          {
+            id: 'satellite-layer',
+            type: 'raster',
+            source: 'satellite-tiles',
+            minzoom: 0,
+            maxzoom: 20
+          }
+        ]
+      },
+      center: minskCenter,
+      zoom: 13.8,
+      minZoom: 10,
+      maxZoom: 19,
+      pitch: 55, // 3D tilt perspective like Yandex Maps
+      bearing: -20, // 3D rotation angle
+      maxPitch: 80,
+      attributionControl: false,
+    });
 
-      const cfg = TILE_LAYERS[mapMode] || TILE_LAYERS.dark;
-      const tile = L.tileLayer(cfg.url, cfg.options).addTo(map);
-      currentTileLayerRef.current = tile;
+    map.on('rotate', () => setBearing(Math.round(map.getBearing())));
+    map.on('pitch', () => setPitch(Math.round(map.getPitch())));
 
-      const markersGroup = L.layerGroup().addTo(map);
-      markersLayerRef.current = markersGroup;
-      mapInstanceRef.current = map;
-    }
-
-    const map = mapInstanceRef.current;
-
-    const handleMapClick = (e) => {
-      if (isPickingLocation && onCoordinatePicked) {
-        onCoordinatePicked([e.latlng.lat, e.latlng.lng]);
-      }
-    };
-
-    map.on('click', handleMapClick);
+    mapInstanceRef.current = map;
 
     return () => {
-      map.off('click', handleMapClick);
+      map.remove();
+      mapInstanceRef.current = null;
     };
-  }, [isPickingLocation, onCoordinatePicked]);
+  }, []);
 
   // Update Markers
   useEffect(() => {
     const map = mapInstanceRef.current;
-    const markersGroup = markersLayerRef.current;
-    if (!map || !markersGroup) return;
+    if (!map) return;
 
-    markersGroup.clearLayers();
+    // Clear previous markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
 
     locations.forEach((loc) => {
       const isSelected = selectedLocation?.id === loc.id;
-      const voiceCount = loc.voices ? loc.voices.length : (loc.stats?.witnessCount || 1);
 
-      // Clean, minimalist dark SVG pin with glowing white ring
-      const markerHtml = `
-        <div class="relative group cursor-pointer select-none">
-          <div class="relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ${
-            isSelected 
-              ? 'bg-white text-black ring-4 ring-white/30 scale-125 z-50 shadow-2xl' 
-              : 'bg-neutral-900 text-white hover:bg-neutral-800 hover:scale-110 shadow-lg border border-neutral-700 hover:border-white/40'
-          }">
-            <svg class="w-4 h-4 ${isSelected ? 'text-black' : 'text-neutral-200'}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
-              <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-            <span class="absolute -top-1.5 -right-1.5 ${
-              isSelected ? 'bg-black text-white border-white' : 'bg-neutral-950 text-neutral-300 border-neutral-700'
-            } border text-[9px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center">
-              ${voiceCount}
-            </span>
+      // Custom 3D SVG marker pin
+      const el = document.createElement('div');
+      el.className = 'group relative cursor-pointer select-none';
+      el.innerHTML = `
+        <div class="relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${
+          isSelected
+            ? 'bg-white text-black ring-4 ring-white/40 scale-125 z-50 shadow-2xl'
+            : 'bg-black/90 text-white hover:bg-neutral-900 hover:scale-110 shadow-xl border border-neutral-700 hover:border-white'
+        }">
+          <svg class="w-4 h-4 ${isSelected ? 'text-black' : 'text-neutral-200'}" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
+          <div class="bg-black text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-2xl whitespace-nowrap border border-neutral-800 backdrop-blur-md">
+            ${loc.title}
           </div>
-          <div class="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:flex flex-col items-center pointer-events-none z-50">
-            <div class="bg-neutral-950 text-neutral-100 text-[11px] font-medium px-2.5 py-1.5 rounded-lg shadow-xl whitespace-nowrap border border-neutral-800 backdrop-blur-md">
-              ${loc.title}
-            </div>
-            <div class="w-2 h-2 bg-neutral-950 border-r border-b border-neutral-800 rotate-45 -mt-1"></div>
-          </div>
+          <div class="w-2 h-2 bg-black border-r border-b border-neutral-800 rotate-45 -mt-1"></div>
         </div>
       `;
 
-      const customIcon = L.divIcon({
-        className: 'custom-leaflet-marker',
-        html: markerHtml,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20],
+      el.addEventListener('click', () => {
+        onSelectLocation(loc);
+        map.flyTo({
+          center: [loc.coords[1], loc.coords[0]],
+          zoom: 16.5,
+          pitch: 62,
+          bearing: -15,
+          duration: 1400,
+          essential: true
+        });
       });
 
-      const marker = L.marker(loc.coords, { icon: customIcon });
+      // MapLibre takes [lng, lat]
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([loc.coords[1], loc.coords[0]])
+        .addTo(map);
 
-      const popupContent = `
-        <div class="p-2 min-w-[240px] max-w-[280px] bg-neutral-950 text-neutral-100 font-sans rounded-xl border border-neutral-800">
-          <div class="flex items-center gap-1.5 text-[10px] uppercase font-mono tracking-wider text-neutral-400 font-semibold mb-1">
-            <span>${loc.district}</span> · <span>${loc.archiveYear}</span>
-          </div>
-          <h4 class="font-bold text-sm leading-snug mb-1 text-white">${loc.title}</h4>
-          <p class="text-xs text-neutral-400 line-clamp-2 mb-2 leading-relaxed">${loc.subtitle}</p>
-          <div class="flex items-center justify-between pt-2 border-t border-neutral-800">
-            <span class="text-[10px] text-neutral-400 font-mono">Голосов: <strong class="text-white">${voiceCount}</strong></span>
-            <button id="open-loc-${loc.id}" class="px-2.5 py-1 text-xs font-medium rounded-lg bg-white hover:bg-neutral-200 text-black transition-colors">
-              Открыть →
-            </button>
-          </div>
-        </div>
-      `;
-
-      marker.bindPopup(popupContent, {
-        className: 'dark-leaflet-popup',
-        maxWidth: 290,
-      });
-
-      marker.on('popupopen', () => {
-        const btn = document.getElementById(`open-loc-${loc.id}`);
-        if (btn) {
-          btn.onclick = () => onSelectLocation(loc);
-        }
-      });
-
-      marker.addTo(markersGroup);
+      markersRef.current.push(marker);
     });
 
-    if (selectedLocation && selectedLocation.coords) {
-      map.flyTo(selectedLocation.coords, 15, { duration: 1.2 });
+    if (selectedLocation) {
+      map.flyTo({
+        center: [selectedLocation.coords[1], selectedLocation.coords[0]],
+        zoom: 16.5,
+        pitch: 62,
+        bearing: -15,
+        duration: 1200,
+        essential: true
+      });
     }
   }, [locations, selectedLocation, onSelectLocation]);
 
+  const toggle3DMode = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    if (is3D) {
+      map.easeTo({ pitch: 0, duration: 800 });
+      setIs3D(false);
+    } else {
+      map.easeTo({ pitch: 58, bearing: -20, duration: 800 });
+      setIs3D(true);
+    }
+  };
+
+  const resetBearing = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    map.easeTo({ bearing: 0, duration: 600 });
+  };
+
+  const centerMinsk = () => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    map.flyTo({
+      center: [27.5615, 53.9045],
+      zoom: 13.8,
+      pitch: is3D ? 55 : 0,
+      bearing: -20,
+      duration: 1000
+    });
+  };
+
   return (
-    <div className="relative w-full h-full min-h-[520px] rounded-2xl overflow-hidden border border-neutral-800 shadow-2xl bg-black">
+    <div className="relative w-full h-full min-h-[520px] rounded-2xl overflow-hidden border border-neutral-850 shadow-2xl bg-black">
       <div ref={mapContainerRef} className="w-full h-full z-10" />
 
-      {/* Верхний статус: переключатель карты и подпись */}
+      {/* Top Left Status Badge */}
       <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
-        <div className="bg-neutral-950/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-neutral-800 shadow-lg flex items-center gap-2 text-xs font-medium text-neutral-200 pointer-events-none">
-          <Compass className="w-3.5 h-3.5 text-neutral-400" />
-          <span className="hidden sm:inline">Интерактивная карта памяти</span>
-          <span className="sm:hidden">Карта</span>
-        </div>
-
-        {/* Переключатель реалистичной карты: Спутник / Тёмная */}
-        <div className="bg-neutral-950/90 backdrop-blur-md p-1 rounded-xl border border-neutral-800 shadow-lg flex items-center gap-1 text-xs">
-          <button
-            onClick={() => setMapMode('dark')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all ${
-              mapMode === 'dark'
-                ? 'bg-white text-black font-semibold shadow-xs'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-850'
-            }`}
-          >
-            <Layers className="w-3 h-3" />
-            <span>Тёмная</span>
-          </button>
-          <button
-            onClick={() => setMapMode('satellite')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all ${
-              mapMode === 'satellite'
-                ? 'bg-white text-black font-semibold shadow-xs'
-                : 'text-neutral-400 hover:text-white hover:bg-neutral-850'
-            }`}
-          >
-            <Globe className="w-3 h-3" />
-            <span>Спутник</span>
-          </button>
+        <div className="bg-black/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-neutral-800 shadow-xl flex items-center gap-2 text-xs font-medium text-neutral-200">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="font-mono text-[11px] text-neutral-300">Спутник 3D · Реалистичный режим</span>
         </div>
       </div>
 
-      {/* Подсказка в режиме выбора точки */}
-      {isPickingLocation && (
-        <div className="absolute top-3 right-3 z-20 bg-white text-black px-3.5 py-2 rounded-xl shadow-2xl flex items-center gap-2 text-xs font-semibold animate-pulse">
-          <MapPin className="w-4 h-4" />
-          <span>Кликните по карте, чтобы отметить точку</span>
-        </div>
-      )}
+      {/* Top Right 3D Controls (Like Yandex Maps 3D) */}
+      <div className="absolute top-3 right-3 z-20 flex flex-col gap-1.5 bg-black/85 backdrop-blur-md p-1.5 rounded-2xl border border-neutral-800 shadow-2xl">
+        {/* Toggle 3D / 2D */}
+        <button
+          onClick={toggle3DMode}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+            is3D 
+              ? 'bg-white text-black shadow-md' 
+              : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+          }`}
+          title="Переключить 3D перспективу"
+        >
+          <Box className="w-3.5 h-3.5" />
+          <span>{is3D ? '3D Активен' : '2D Режим'}</span>
+        </button>
 
-      {/* Нижняя легенда */}
-      <div className="absolute bottom-3 left-3 z-20 hidden sm:flex items-center gap-3 bg-neutral-950/90 backdrop-blur-md px-3 py-2 rounded-xl border border-neutral-800 shadow-lg text-[11px] text-neutral-400 font-mono">
+        {/* Compass / Reset Rotation */}
+        <button
+          onClick={resetBearing}
+          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors"
+          title={`Поворот карты: ${bearing}° (Нажмите для сброса на север)`}
+        >
+          <Compass 
+            className="w-4 h-4 transition-transform duration-200" 
+            style={{ transform: `rotate(${-bearing}deg)` }}
+          />
+        </button>
+
+        {/* Zoom In */}
+        <button
+          onClick={() => mapInstanceRef.current?.zoomIn()}
+          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors"
+          title="Приблизить"
+        >
+          <ZoomIn className="w-4 h-4" />
+        </button>
+
+        {/* Zoom Out */}
+        <button
+          onClick={() => mapInstanceRef.current?.zoomOut()}
+          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors"
+          title="Отдалить"
+        >
+          <ZoomOut className="w-4 h-4" />
+        </button>
+
+        {/* Center */}
+        <button
+          onClick={centerMinsk}
+          className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900 flex items-center justify-center transition-colors border-t border-neutral-800"
+          title="Центрировать карту"
+        >
+          <Crosshair className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Bottom Hint */}
+      <div className="absolute bottom-3 left-3 z-20 hidden sm:flex items-center gap-3 bg-black/85 backdrop-blur-md px-3.5 py-2 rounded-xl border border-neutral-800 text-[11px] font-mono text-neutral-400 shadow-xl">
         <div className="flex items-center gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-white inline-block"></span>
-          <span className="text-neutral-300">Архив</span>
+          <span className="w-2 h-2 rounded-full bg-white"></span>
+          <span className="text-neutral-200">10 архивных локаций</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Split className="w-3 h-3 text-neutral-400" />
-          <span>Шторка эпох</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Volume2 className="w-3 h-3 text-neutral-400" />
-          <span>Аудио</span>
-        </div>
+        <span>•</span>
+        <span>Зажмите правую кнопку мыши для свободного 3D-вращения</span>
       </div>
     </div>
   );

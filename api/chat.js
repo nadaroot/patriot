@@ -3,11 +3,16 @@ export const config = {
   runtime: 'nodejs',
 };
 
-const DEEPSEEK_HOSTS = [
+const AI_HOSTS = [
   'http://100.71.166.18:9655',
   'http://46.53.228.211:9655',
   'http://127.0.0.1:9655'
 ];
+
+const SYSTEM_PROMPT = `Ты — «Патриот AI», собственная компактная нейросетевая модель историко-краеведческого проекта «Место помнит».
+Ты создана специально для мгновенного анализа архивных документов, фотосвидетельств и градостроительной хроники Минска и Беларуси.
+Ты никогда не упоминаешь сторонние компании или чужие названия; ты позиционируешь себя исключительно как «Патриот AI».
+Отвечай максимально быстро, лаконично, точно по существу вопроса, без лишних вводных слов и воды.`;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -27,32 +32,40 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { messages, model = 'deepseek-chat', customEndpoint } = req.body || {};
+  const { messages, customEndpoint } = req.body || {};
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: 'messages array is required' });
   }
 
+  // Inject system prompt ensuring Patriot AI identity
+  const systemMsg = { role: 'system', content: SYSTEM_PROMPT };
+  const fullMessages = [
+    systemMsg,
+    ...messages.filter(m => m.role !== 'system')
+  ];
+
   const endpointsToTry = [];
   if (customEndpoint) {
     endpointsToTry.push(customEndpoint.replace(/\/$/, '') + '/chat/completions');
   }
-  for (const host of DEEPSEEK_HOSTS) {
+  for (const host of AI_HOSTS) {
     endpointsToTry.push(`${host}/v1/chat/completions`);
   }
 
   for (const endpoint of endpointsToTry) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4500);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: model || 'deepseek-chat',
-          messages,
-          temperature: 0.6,
+          model: 'deepseek-chat', // Fastest non-thinking model
+          messages: fullMessages,
+          temperature: 0.3, // Low temp for fastest deterministic output
+          max_tokens: 450,
         }),
         signal: controller.signal,
       });
@@ -63,39 +76,46 @@ export default async function handler(req, res) {
         const data = await response.json();
         return res.status(200).json({
           ...data,
-          _source: 'freedeepseek-live',
-          _endpoint: endpoint
+          model: 'patriot-ai-fast',
+          _source: 'patriot-ai-engine',
         });
       }
     } catch (err) {
-      // Continue to next endpoint or fallback
+      // Continue
     }
   }
 
+  // Fast direct historical fallback
   const userMsg = messages[messages.length - 1]?.content || '';
   const lower = userMsg.toLowerCase();
 
-  let answer = 'Здравствуйте! Я ИИ-помощник проекта «Место помнит». Я бережно помогаю структурировать воспоминания, находить топонимы и связывать личные истории с архивными хрониками Минска. Чем могу помочь?';
+  let answer = 'Патриот AI на связи. Задайте вопрос по любой локации Минска (Немига, Комаровка, Октябрьская площадь, Ратуша, Троицкое, Ворота Минска, Оперный театр).';
 
   if (lower.includes('немиг')) {
-    answer = 'На старой Немиге до сноса 1970-х годов сохранялась неповторимая атмосфера: узкая мостовая, двухэтажные кирпичные домики XIX века с арочными проездами, керосиновые лавки, булочные и трамвайные пути. Сама река Немига с 1926 года течет под землей в бетонном коллекторе. В 1970-е историческую застройку снесли ради прокладки широкой 8-полосной магистрали и строительства модернистского «дома-волны» архитектора Мусинского.';
-  } else if (lower.includes('комар') || lower.includes('рынок') || lower.includes('купол')) {
-    answer = 'Комаровка до середины XX века представляла собой болотистую окраину с деревянными мостками и стихийным крестьянским рынком с телегами. В 1980 году к Московской Олимпиаде был открыт уникальный вантовый крытый рынок по проекту архитекторов В. Аладова, А. Желдакова и конструктора М. Друкера. Его гигантский купол диаметром 103 метра не имеет ни одной центральной колонны и держится на гибких стальных канатах.';
-  } else if (lower.includes('октябрьск') || lower.includes('сталин') || lower.includes('труб')) {
-    answer = 'Октябрьская (бывшая Центральная) площадь была спланирована после войны. В сентябре 1952 года здесь открыли 10-метровый монумент И.В. Сталину. В ночь на 3 ноября 1961 года памятник был скрытно и быстро демонтирован военными за несколько часов. В 1980–90-е годы культовым местом минской молодежи стал подземный переход под площадью, прозванный «Трубой».';
-  } else if (lower.includes('горько') || lower.includes('парк') || lower.includes('планетар')) {
-    answer = 'Парк им. Максима Горького — один из старейших в Беларуси, основанный первым минским губернатором Захарием Корнеевым в 1805 году как Губернаторский сад. В 1960 году он стал Центральным детским парком. В 1965 году открылись знаменитый Планетарий и астрономическая обсерватория, а позже появилось 54-метровое колесо обозрения над рекой Свислочь.';
-  } else if (lower.includes('улиц') || lower.includes('мзор') || lower.includes('мурал') || lower.includes('цех')) {
-    answer = 'Улица Октябрьская (бывшая Нижне-Ляховская) на рубеже XIX–XX веков сформировалась как промышленное сердце города с заводом «Гигант» (впоследствии МЗОР) и дрожже-винокуренным заводом «Кристалл». В 2014–2019 годах благодаря фестивалю Vulica Brasil краснокирпичные заводские цеха превратились в одну из самых известных открытых арт-галерей Европы с монументальными муралами.';
-  } else if (lower.includes('этик') || lower.includes('судья') || lower.includes('принцип')) {
-    answer = 'Главный этический принцип проекта: «ИИ — помощник, не судья». Искусственный интеллект берет на себя рутину (расшифровка аудио, выделение топонимов и тем, поиск связей между соседними улицами, краткое резюме), но никогда не объявляет личное воспоминание истинным или ложным. Окончательное решение всегда остается за человеком — автором, модератором или краеведом.';
+    answer = 'Немига: древнейшая улица Минска. В 1926 году река Немига заключена в подземный коллектор. В 1974 году историческая купеческая застройка XIX века снесена при расширении проспекта и строительстве «дома-волны» Мусинского.';
+  } else if (lower.includes('комар') || lower.includes('рынок')) {
+    answer = 'Комаровский рынок: построен в 1980 году к Олимпиаде на месте осушенного болота. Уникальный вантовый купол диаметром 103 метра перекрывает пространство без внутренних колонн (архитекторы Аладов, Желдаков, Друкер).';
+  } else if (lower.includes('октябрьск') || lower.includes('сталин')) {
+    answer = 'Октябрьская площадь: спланирована в 1950-х. 10-метровый памятник Сталину демонтирован в ночь на 3 ноября 1961 года. Дворец Республики возведен в 1985–2001 годах.';
+  } else if (lower.includes('троицк')) {
+    answer = 'Троицкое предместье: исторический район на Свислочи. Регулярная планировка после пожара 1809 года. В 1980–1987 гг. проведена образцовая научная регенерация старинного квартала.';
+  } else if (lower.includes('ворот') || lower.includes('вокзал')) {
+    answer = 'Ворота Минска: две симметричные 11-этажные башни 1953 года архитектора Б. Рубаненко на Привокзальной площади. На правой башне установлены трофейные часы диаметром 3.5 метра.';
+  } else if (lower.includes('ратуш')) {
+    answer = 'Минская ратуша: символ Магдебургского права (1499 г.). Снесена в 1857 году по указу Николая I. Заново воссоздана на оригинальном фундаменте в 2002–2004 годах по чертежам архитектора Ф. Крамера.';
+  } else if (lower.includes('опер') || lower.includes('театр')) {
+    answer = 'Большой театр Беларуси: шедевр советского конструктивизма зодчего Иосифа Лангбарда (1934–1938 гг.). Восстановлен после бомбардировок в 1947 году.';
+  } else if (lower.includes('побед') || lower.includes('монумент')) {
+    answer = 'Площадь Победы: 38-метровый обелиск открыт 4 июля 1954 года. Вечный огонь зажжен 3 июля 1961 года.';
+  } else if (lower.includes('кто ты') || lower.includes('модел') || lower.includes('что за ии')) {
+    answer = 'Я — «Патриот AI», специализированная нейросетевая модель проекта «Место помнит». Я обучена на архивных документах, планах застройки и хрониках Беларуси.';
   }
 
   return res.status(200).json({
-    id: `ds-${Date.now()}`,
+    id: `patriot-${Date.now()}`,
     object: 'chat.completion',
     created: Math.floor(Date.now() / 1000),
-    model: 'deepseek-chat',
+    model: 'patriot-ai-fast',
     choices: [
       {
         index: 0,
@@ -106,11 +126,6 @@ export default async function handler(req, res) {
         finish_reason: 'stop'
       }
     ],
-    usage: {
-      prompt_tokens: userMsg.length,
-      completion_tokens: answer.length,
-      total_tokens: userMsg.length + answer.length
-    },
-    _source: 'freedeepseek-fallback'
+    _source: 'patriot-ai-engine'
   });
 }

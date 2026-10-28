@@ -3,52 +3,38 @@ import {
   Compass, 
   MapPin, 
   Sparkles, 
-  Award, 
-  Plus, 
+  Split, 
   Menu, 
   X, 
-  GraduationCap,
-  History,
-  Activity
+  History
 } from 'lucide-react';
 
-export const Header = ({ activeTab, onTabChange, onOpenAddWizard, storyCount = 15 }) => {
+export const Header = ({ activeTab, onTabChange }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { id: 'map', label: 'Карта памяти', icon: MapPin },
-    { id: 'catalog', label: 'Места и голоса', icon: History },
-    { id: 'ai', label: 'ИИ-помощник', icon: Sparkles },
-    { id: 'quests', label: 'Задания недели', icon: Award },
-    { id: 'guide', label: 'Школа и архив', icon: GraduationCap },
+    { id: 'map', label: '3D Карта', icon: MapPin },
+    { id: 'catalog', label: 'Архив мест', icon: History },
+    { id: 'compare', label: 'Сравнение эпох', icon: Split },
+    { id: 'ai', label: 'ИИ-исследователь', icon: Sparkles },
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-neutral-950/90 backdrop-blur-xl border-b border-neutral-850 transition-colors">
+    <header className="sticky top-0 z-40 bg-black/90 backdrop-blur-xl border-b border-neutral-850">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20">
+        <div className="flex items-center justify-between h-16">
           
-          {/* Logo & Concept */}
+          {/* Logo */}
           <div 
             onClick={() => onTabChange('map')} 
-            className="flex items-center gap-3 cursor-pointer group select-none"
+            className="flex items-center gap-2.5 cursor-pointer select-none group"
           >
-            <div className="w-10 h-10 rounded-xl bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center shadow-lg group-hover:border-neutral-700 transition-colors">
-              <Compass className="w-5 h-5 text-neutral-200 group-hover:rotate-45 transition-transform duration-500" />
+            <div className="w-9 h-9 rounded-xl bg-neutral-900 border border-neutral-800 text-white flex items-center justify-center group-hover:border-neutral-700 transition-colors">
+              <Compass className="w-4 h-4 text-white group-hover:rotate-45 transition-transform duration-300" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-base sm:text-lg text-white tracking-tight">
-                  Место помнит
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-neutral-900 text-neutral-400 border border-neutral-800">
-                  Минск · 2026
-                </span>
-              </div>
-              <p className="text-[11px] text-neutral-400 hidden sm:block">
-                У каждого места — больше одной истории
-              </p>
-            </div>
+            <span className="font-bold text-base text-white tracking-tight">
+              Место помнит
+            </span>
           </div>
 
           {/* Desktop Navigation */}
@@ -73,28 +59,18 @@ export const Header = ({ activeTab, onTabChange, onOpenAddWizard, storyCount = 1
             })}
           </nav>
 
-          {/* Right actions: AI status & Add Story */}
-          <div className="flex items-center gap-2.5">
-            {/* FreeDeepSeek pill */}
+          {/* Right Status */}
+          <div className="flex items-center gap-2">
             <div 
               onClick={() => onTabChange('ai')}
-              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-400 hover:border-neutral-700 cursor-pointer transition-colors"
-              title="ИИ-бэкенд: FreeDeepSeek (100.71.166.18)"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-[10px] font-mono text-neutral-300 hover:border-neutral-700 cursor-pointer transition-colors"
+              title="Нейросетевая модель Патриот AI"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>FreeDeepSeek AI</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+              <span>Патриот AI</span>
             </div>
 
-            <button
-              onClick={onOpenAddWizard}
-              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white hover:bg-neutral-200 active:scale-95 text-black shadow-lg transition-all"
-            >
-              <Plus className="w-4 h-4 shrink-0" />
-              <span className="hidden xs:inline">Добавить воспоминание</span>
-              <span className="xs:hidden">Добавить</span>
-            </button>
-
-            {/* Mobile menu trigger */}
+            {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-neutral-900"
@@ -106,9 +82,9 @@ export const Header = ({ activeTab, onTabChange, onOpenAddWizard, storyCount = 1
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-neutral-950 border-b border-neutral-850 px-4 pt-2 pb-4 space-y-1">
+        <div className="md:hidden bg-black border-b border-neutral-850 px-4 pt-2 pb-4 space-y-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
